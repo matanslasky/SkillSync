@@ -1,14 +1,20 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import SynergyMeter from '../components/SynergyMeter'
 import MilestoneTimeline from '../components/MilestoneTimeline'
+import JoinRequestModal from '../components/JoinRequestModal'
+import JoinRequestManager from '../components/JoinRequestManager'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
+import { useAuth } from '../contexts/AuthContext'
 import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp } from 'lucide-react'
 
 const ProjectView = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const project = getProjectById(id)
+  const [showJoinModal, setShowJoinModal] = useState(false)
 
   if (!project) {
     return (
@@ -27,6 +33,10 @@ const ProjectView = () => {
   const teamMembers = mockUsers.filter(user => project.team.includes(user.id))
   const projectTasks = mockTasks.filter(task => task.projectId === id)
   const daysUntilDeadline = Math.ceil((new Date(project.deadline) - new Date()) / (1000 * 60 * 60 * 24))
+
+  // Check if user is already a team member
+  const isTeamMember = project.team?.includes(user?.uid) || false
+  const isProjectOwner = project.creatorId === user?.uid || false
 
   // Role-specific action button mapping
   const getRoleActionButton = (role) => {
@@ -115,9 +125,18 @@ const ProjectView = () => {
                 <p className="text-gray-400 text-lg max-w-3xl">{project.description}</p>
               </div>
               
-              <button className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all">
-                Join Project
-              </button>
+              {isTeamMember ? (
+                <div className="px-6 py-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 font-semibold rounded-lg">
+                  Team Member ✓
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowJoinModal(true)}
+                  className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+                >
+                  Join Project
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -202,6 +221,14 @@ const ProjectView = () => {
           <div className="grid grid-cols-3 gap-8">
             {/* Left Column - Team & Tasks */}
             <div className="col-span-2 space-y-8">
+              {/* Join Request Manager (only for project owners) */}
+              {isProjectOwner && (
+                <JoinRequestManager 
+                  projectId={id} 
+                  projectName={project.name || project.title}
+                />
+              )}
+
               {/* Team Members */}
               <div className="glass-effect rounded-xl p-6 border border-gray-800">
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -363,6 +390,13 @@ const ProjectView = () => {
           </div>
         </div>
       </main>
+
+      {/* Join Request Modal */}
+      <JoinRequestModal 
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        project={project}
+      />
     </div>
   )
 }
