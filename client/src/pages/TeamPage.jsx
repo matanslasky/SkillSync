@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
-import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar } from 'lucide-react'
+import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar, Grid, List } from 'lucide-react'
 import { mockUsers } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import ProgressBar from '../components/ProgressBar'
@@ -9,6 +9,7 @@ import ProgressBar from '../components/ProgressBar'
 const TeamPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
 
   const filteredMembers = mockUsers.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,6 +53,32 @@ const TeamPage = () => {
               </option>
             ))}
           </select>
+          
+          {/* View Toggle */}
+          <div className="flex items-center gap-2 bg-dark-lighter border border-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-neon-green text-dark'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              title="Grid View"
+            >
+              <Grid size={20} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded transition-all ${
+                viewMode === 'list'
+                  ? 'bg-neon-green text-dark'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              title="List View"
+            >
+              <List size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -78,10 +105,15 @@ const TeamPage = () => {
           />
         </div>
 
-        {/* Team Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Team Grid or List */}
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+          : "space-y-4"
+        }>
           {filteredMembers.map(member => (
-            <TeamMemberCard key={member.id} member={member} />
+            viewMode === 'grid' 
+              ? <TeamMemberCard key={member.id} member={member} />
+              : <TeamMemberListItem key={member.id} member={member} />
           ))}
         </div>
 
@@ -194,6 +226,102 @@ const TeamMemberCard = ({ member }) => {
         >
           <Linkedin size={16} className="text-gray-400" />
         </button>
+      </div>
+    </div>
+  )
+}
+
+const TeamMemberListItem = ({ member }) => {
+  const navigate = useNavigate()
+  
+  const handleMessage = () => {
+    navigate('/messages', { state: { openChatWithUser: member } })
+  }
+
+  const handleGithub = () => {
+    window.open('https://github.com', '_blank')
+  }
+
+  const handleLinkedIn = () => {
+    window.open('https://linkedin.com', '_blank')
+  }
+
+  return (
+    <div className="glass-effect rounded-xl p-6 border border-gray-800 hover:border-neon-green/30 transition-all">
+      <div className="flex items-center gap-4">
+        {/* Avatar */}
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-2xl font-bold flex-shrink-0">
+          {member.name.charAt(0)}
+        </div>
+        
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">{member.name}</h3>
+              <p className="text-sm text-gray-400">
+                {getRoleIcon(member.role)} {member.role}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${
+                member.status === 'online' ? 'bg-neon-green' :
+                member.status === 'away' ? 'bg-yellow-500' : 'bg-gray-600'
+              }`}></span>
+              <span className="text-xs text-gray-500 capitalize">{member.status}</span>
+            </div>
+          </div>
+          
+          {/* Skills */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            {member.skills.slice(0, 5).map((skill, idx) => (
+              <span key={idx} className="px-2 py-1 bg-dark-lighter text-xs text-gray-400 rounded border border-gray-800">
+                {skill}
+              </span>
+            ))}
+            {member.skills.length > 5 && (
+              <span className="px-2 py-1 bg-dark-lighter text-xs text-gray-400 rounded border border-gray-800">
+                +{member.skills.length - 5}
+              </span>
+            )}
+          </div>
+          
+          {/* Commitment Score */}
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-xs text-gray-500">Commitment Score</p>
+                <p className="text-sm font-bold text-neon-green">{member.commitmentScore}%</p>
+              </div>
+              <ProgressBar progress={member.commitmentScore} color="green" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex flex-col gap-2">
+          <button 
+            onClick={handleMessage}
+            className="flex items-center gap-2 bg-neon-green/10 text-neon-green border border-neon-green/30 px-4 py-2 rounded-lg hover:bg-neon-green/20 transition-all text-sm font-medium"
+          >
+            <Mail size={16} />
+            Message
+          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleGithub}
+              className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all"
+            >
+              <Github size={16} className="text-gray-400" />
+            </button>
+            <button 
+              onClick={handleLinkedIn}
+              className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all"
+            >
+              <Linkedin size={16} className="text-gray-400" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
