@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Mail, Lock, LogIn } from 'lucide-react'
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -56,7 +57,7 @@ const Login = () => {
             {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                Email or Username
+                Email
               </label>
               <div className="relative">
                 <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -65,7 +66,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
-                  placeholder="you@example.com or admin"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -79,13 +80,25 @@ const Login = () => {
               <div className="relative">
                 <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSubmit(e)
+                    }
+                  }}
+                  className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-12 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 

@@ -8,6 +8,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check for admin session first
+    const adminUser = sessionStorage.getItem('adminUser')
+    if (adminUser) {
+      setUser(JSON.parse(adminUser))
+      setLoading(false)
+      return
+    }
+
     // Listen to Firebase auth state changes
     const unsubscribe = authService.onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
