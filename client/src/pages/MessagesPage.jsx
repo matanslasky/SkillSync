@@ -1,66 +1,144 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from '../components/Sidebar'
 import { Search, Send, Paperclip, Smile, MoreVertical, Phone, Video } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { 
+  subscribeToConversations, 
+  subscribeToMessages, 
+  sendMessage, 
+  getOrCreateConversation,
+  getUserInfo,
+  markMessagesAsRead 
+} from '../services/messageService'
 import { mockUsers } from '../data/mockData'
 
 const MessagesPage = () => {
-  const [selectedChat, setSelectedChat] = useState(mockUsers[0])
+  const { user } = useAuth()
+  const [selectedChat, setSelectedChat] = useState(null)
   const [messageText, setMessageText] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [conversations, setConversations] = useState([])
+  const [messages, setMessages] = useState([])
+  const [conversationUsers, setConversationUsers] = useState({})
+  const [loading, setLoading] = useState(true)
+  const messagesEndRef = useRef(null)
 
-  // Mock conversations
-  const conversations = mockUsers.map(user => ({
-    user,
-    lastMessage: "Hey! How's the project going?",
-    timestamp: '2 min ago',
-    unread: user.id === 'user2' ? 3 : 0
-  }))
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
-  // Mock messages for selected chat
-  const messages = [
-    {
-      id: 1,
-      sender: 'other',
-      text: 'Hey! Have you seen the latest design mockups?',
-      timestamp: '10:30 AM'
-    },
-    {
-      id: 2,
-      sender: 'me',
-      text: 'Yes! They look amazing. Great work on the color scheme.',
-      timestamp: '10:32 AM'
-    },
-    {
-      id: 3,
-      sender: 'other',
-      text: 'Thanks! I was thinking we could iterate on the dashboard layout. What do you think?',
-      timestamp: '10:35 AM'
-    },
-    {
-      id: 4,
-      sender: 'me',
-      text: 'Absolutely! I have some ideas. Can we schedule a quick call?',
-      timestamp: '10:38 AM'
-    },
-    {
-      id: 5,
-      sender: 'other',
-      text: 'Sure! How about 3 PM today?',
-      timestamp: '10:40 AM'
+  // Subscribe to user's conversations
+  useEffect(() => {
+    if (!user?.uid) return
+
+    const unsubscribe = subscribeToConversations(user.uid, async (convos) => {
+      setConversations(convos)
+      
+      // Fetch user info for all conversation participants
+      const userIds = new Set()
+      convos.forEach(convo => {
+        convo.participants.forEach(id => {
+          if (id !== user.uid) userIds.add(id)
+        })
+      })
+      
+      const usersData = {}
+      await Promise.all(
+        Array.from(userIds).map(async (userId) => {
+          const userInfo = await getUserInfo(userId)
+          if (userInfo) {
+            usersData[userId] = userInfo
+          }
+        })
+      )
+      
+      setConversationUsers(usersData)
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [user])
+
+  // Subscribe to messages in selected conversation
+  useEffect(() => {
+    if (!selectedChat?.conversationId) {
+      setMessages([])
+      return
     }
-  ]
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    const unsubscribe = subscribeToMessages(selectedChat.conversationId, (msgs) => {
+      setMessages(msgs)
+      
+      // Mark messages as read
+      if (user?.uid) {
+        markMessagesAsRead(selectedChat.conversationId, user.uid)
+      }
+    })
 
-  const handleSendMessage = (e) => {
+    return () => unsubscribe()
+  }, [selectedChat, user])
+
+  // Handle starting a new conversation with a team member
+  const handleStartConversation = async (otherUser) => {
+    if (!user?.uid) return
+    
+    const conversationId = await getOrCreateConversation(user.uid, otherUser.id)
+    setSelectedChat({
+      conversationId,
+      otherUser
+    })
+  }
+
+  const filteredConversations = conversations.filter(conv => {
+    const otherUserId = conv.participants.find(id => id !== user?.uid)
+    const otherUser = conversationUsers[otherUserId]
+    return otherUser?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  })
+
+  // Available team members to start new conversations
+  const availableUsers = mockUsers.filter(u => u.id !== user?.uid)
+
+  const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (messageText.trim()) {
-      // TODO: Send message via Firebase
-      console.log('Sending message:', messageText)
+    if (!messageText.trim() || !selectedChat?.conversationId || !user?.uid) return
+    
+    try {
+      await sendMessage(selectedChat.conversationId, user.uid, messageText.trim())
       setMessageText('')
+    } catch (error) {
+      console.error('Error sending message:', error)
+      alert('Failed to send message. Please try again.')
     }
+  }
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return ''
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    })
+  }
+
+  const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return ''
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
   }
 
   return (
@@ -86,36 +164,66 @@ const MessagesPage = () => {
 
           {/* Conversations */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.map(conv => (
-              <button
-                key={conv.user.id}
-                onClick={() => setSelectedChat(conv.user)}
-                className={`w-full p-4 flex items-start gap-3 border-b border-gray-800 hover:bg-dark-lighter transition-all ${
-                  selectedChat?.id === conv.user.id ? 'bg-dark-lighter border-l-2 border-l-neon-green' : ''
-                }`}
-              >
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {conv.user.name.charAt(0)}
-                  </div>
-                  {conv.user.status === 'online' && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-neon-green rounded-full border-2 border-dark"></span>
-                  )}
+            {loading ? (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-gray-500 text-sm">Loading conversations...</p>
+              </div>
+            ) : filteredConversations.length > 0 ? (
+              filteredConversations.map(conv => {
+                const otherUserId = conv.participants.find(id => id !== user?.uid)
+                const otherUser = conversationUsers[otherUserId]
+                
+                if (!otherUser) return null
+                
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => handleStartConversation(otherUser)}
+                    className={`w-full p-4 flex items-start gap-3 border-b border-gray-800 hover:bg-dark-lighter transition-all ${
+                      selectedChat?.conversationId === conv.id ? 'bg-dark-lighter border-l-2 border-l-neon-green' : ''
+                    }`}
+                  >
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        {otherUser.name?.charAt(0) || '?'}
+                      </div>
+                      {otherUser.status === 'online' && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-neon-green rounded-full border-2 border-dark"></span>
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-semibold text-white text-sm">{otherUser.name || 'Unknown'}</p>
+                        <span className="text-xs text-gray-500">{formatRelativeTime(conv.lastMessageTime)}</span>
+                      </div>
+                      <p className="text-xs text-gray-400 line-clamp-1">{conv.lastMessage || 'No messages yet'}</p>
+                    </div>
+                  </button>
+                )
+              })
+            ) : (
+              <div className="p-4">
+                <p className="text-gray-500 text-sm text-center mb-4">No conversations yet</p>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600 text-center mb-2">Start chatting with:</p>
+                  {availableUsers.slice(0, 5).map(u => (
+                    <button
+                      key={u.id}
+                      onClick={() => handleStartConversation(u)}
+                      className="w-full p-3 flex items-center gap-3 bg-dark-lighter rounded-lg hover:bg-dark-light transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-sm font-bold">
+                        {u.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium text-white">{u.name}</p>
+                        <p className="text-xs text-gray-500">{u.role}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div className="flex-1 text-left">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="font-semibold text-white text-sm">{conv.user.name}</p>
-                    <span className="text-xs text-gray-500">{conv.timestamp}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-1">{conv.lastMessage}</p>
-                </div>
-                {conv.unread > 0 && (
-                  <span className="bg-neon-green text-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {conv.unread}
-                  </span>
-                )}
-              </button>
-            ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -127,11 +235,11 @@ const MessagesPage = () => {
               <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-sm font-bold">
-                    {selectedChat.name.charAt(0)}
+                    {selectedChat.otherUser.name?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{selectedChat.name}</p>
-                    <p className="text-xs text-gray-500">{selectedChat.role}</p>
+                    <p className="font-semibold text-white">{selectedChat.otherUser.name || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500">{selectedChat.otherUser.role || ''}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -149,25 +257,35 @@ const MessagesPage = () => {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-md ${msg.sender === 'me' ? 'order-2' : 'order-1'}`}>
-                      <div className={`rounded-2xl px-4 py-3 ${
-                        msg.sender === 'me'
-                          ? 'bg-neon-green text-dark'
-                          : 'glass-effect border border-gray-800'
-                      }`}>
-                        <p className="text-sm">{msg.text}</p>
-                      </div>
-                      <p className={`text-xs text-gray-500 mt-1 ${msg.sender === 'me' ? 'text-right' : 'text-left'}`}>
-                        {msg.timestamp}
-                      </p>
-                    </div>
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500 text-center">
+                      No messages yet.<br />
+                      <span className="text-sm">Say hello to start the conversation!</span>
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  messages.map(msg => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-md ${msg.senderId === user?.uid ? 'order-2' : 'order-1'}`}>
+                        <div className={`rounded-2xl px-4 py-3 ${
+                          msg.senderId === user?.uid
+                            ? 'bg-neon-green text-dark'
+                            : 'glass-effect border border-gray-800'
+                        }`}>
+                          <p className="text-sm">{msg.text}</p>
+                        </div>
+                        <p className={`text-xs text-gray-500 mt-1 ${msg.senderId === user?.uid ? 'text-right' : 'text-left'}`}>
+                          {formatTime(msg.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
@@ -204,7 +322,13 @@ const MessagesPage = () => {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-gray-500">Select a conversation to start messaging</p>
+              <div className="text-center">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-neon-blue to-neon-green opacity-20 flex items-center justify-center">
+                  <Search size={32} className="text-white" />
+                </div>
+                <p className="text-gray-500 mb-2">Select a conversation to start messaging</p>
+                <p className="text-sm text-gray-600">or start a new chat from the sidebar</p>
+              </div>
             </div>
           )}
         </div>
