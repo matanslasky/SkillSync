@@ -16,6 +16,7 @@ export default {
           green: '#00ff9d',
           blue: '#00b8ff',
           pink: '#ff4757',
+          purple: '#9333ea',
         }
       },
       fontFamily: {

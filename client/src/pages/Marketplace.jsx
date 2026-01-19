@@ -1,13 +1,233 @@
+import { useState } from 'react'
 import Sidebar from '../components/Sidebar'
+import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
+import { mockProjects, calculateDaysRemaining, getRoleIcon } from '../data/mockData'
+import { ROLE_LIST } from '../constants/roles'
 
 const Marketplace = () => {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
+  const categories = ['All', 'Social Impact', 'EdTech', 'E-commerce', 'FinTech', 'HealthTech']
+
+  const filteredProjects = mockProjects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
   return (
     <div className="flex h-screen bg-dark">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
-        <h2 className="text-3xl font-bold mb-4">Project Marketplace</h2>
-        <p className="text-gray-500">Coming soon...</p>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Project Marketplace</h2>
+              <p className="text-gray-500">Discover exciting student-led projects or create your own</p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+            >
+              <Plus size={20} />
+              Create Project
+            </button>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search projects..."
+                className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+              />
+            </div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat.toLowerCase()}>{cat}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Projects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(project => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+
+        {filteredProjects.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No projects found. Try adjusting your search.</p>
+          </div>
+        )}
+
+        {/* Create Project Modal */}
+        {showCreateModal && (
+          <CreateProjectModal onClose={() => setShowCreateModal(false)} />
+        )}
       </main>
+    </div>
+  )
+}
+
+const ProjectCard = ({ project }) => {
+  const daysRemaining = calculateDaysRemaining(project.deadline)
+  
+  return (
+    <div className="glass-effect rounded-xl p-6 border border-gray-800 hover:border-neon-green/30 transition-all cursor-pointer">
+      <div className="flex items-start justify-between mb-4">
+        <h3 className="text-lg font-bold text-white">{project.name}</h3>
+        <span className="px-2 py-1 bg-neon-blue/20 text-neon-blue text-xs rounded-full border border-neon-blue/30">
+          {project.category}
+        </span>
+      </div>
+
+      <p className="text-sm text-gray-400 mb-4 line-clamp-2">{project.description}</p>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Users size={16} className="text-gray-500" />
+          <span className="text-gray-400">{project.team.length} members</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar size={16} className="text-gray-500" />
+          <span className="text-gray-400">{daysRemaining} days remaining</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <TrendingUp size={16} className="text-gray-500" />
+          <span className="text-gray-400">{project.progress}% complete</span>
+        </div>
+      </div>
+
+      <button className="w-full mt-4 bg-dark-lighter border border-neon-green/30 text-neon-green font-semibold py-2 rounded-lg hover:bg-neon-green/10 transition-all">
+        View Details
+      </button>
+    </div>
+  )
+}
+
+const CreateProjectModal = ({ onClose }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: 'Social Impact',
+    rolesNeeded: []
+  })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    console.log('Creating project:', formData)
+    // TODO: Implement Firebase project creation
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="glass-effect rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-800">
+        <h3 className="text-2xl font-bold mb-6">Create New Project</h3>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Project Name
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none"
+              placeholder="e.g., EcoTrack - Carbon Footprint App"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none"
+              placeholder="Describe your project idea..."
+              rows={4}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none"
+            >
+              <option>Social Impact</option>
+              <option>EdTech</option>
+              <option>E-commerce</option>
+              <option>FinTech</option>
+              <option>HealthTech</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Roles Needed
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLE_LIST.map(role => (
+                <label key={role.value} className="flex items-center gap-2 p-3 bg-dark-lighter rounded-lg cursor-pointer hover:bg-dark-light transition-all">
+                  <input
+                    type="checkbox"
+                    checked={formData.rolesNeeded.includes(role.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({ ...formData, rolesNeeded: [...formData.rolesNeeded, role.value] })
+                      } else {
+                        setFormData({ ...formData, rolesNeeded: formData.rolesNeeded.filter(r => r !== role.value) })
+                      }
+                    }}
+                    className="accent-neon-green"
+                  />
+                  <span className="text-sm">{role.icon} {role.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-dark-lighter border border-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-dark-light transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-neon-green text-dark font-semibold py-3 rounded-lg hover:shadow-neon-green transition-all"
+            >
+              Create Project
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

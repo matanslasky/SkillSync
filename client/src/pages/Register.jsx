@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Mail, Lock, User, Briefcase } from 'lucide-react'
+import { ROLE_LIST } from '../constants/roles'
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,8 +16,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
-
-  const roles = ['Developer', 'Designer', 'Marketer']
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -143,9 +142,9 @@ const Register = () => {
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all appearance-none"
                 >
-                  {roles.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
+                  {ROLE_LIST.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.icon} {role.label}
                     </option>
                   ))}
                 </select>
