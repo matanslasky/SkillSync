@@ -1,5 +1,7 @@
 import { useParams } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import SynergyMeter from '../components/SynergyMeter'
+import MilestoneTimeline from '../components/MilestoneTimeline'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp } from 'lucide-react'
@@ -290,8 +292,11 @@ const ProjectView = () => {
               </div>
             </div>
 
-            {/* Right Column - Project Details */}
+            {/* Right Column - Project Details + New Features */}
             <div className="space-y-6">
+              {/* Synergy Meter */}
+              <SynergyMeter team={teamMembers} />
+              
               <div className="glass-effect rounded-xl p-6 border border-gray-800">
                 <h3 className="text-xl font-bold mb-4">Project Details</h3>
                 <div className="space-y-4">
@@ -350,6 +355,11 @@ const ProjectView = () => {
                 </ul>
               </div>
             </div>
+          </div>
+          
+          {/* Milestone Timeline - Full Width */}
+          <div className="mt-8">
+            <MilestoneTimeline projectId={id} team={teamMembers} />
           </div>
         </div>
       </main>

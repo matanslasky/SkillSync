@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { Search, Send, Paperclip, Smile, MoreVertical, Phone, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -14,6 +15,7 @@ import { mockUsers } from '../data/mockData'
 
 const MessagesPage = () => {
   const { user } = useAuth()
+  const location = useLocation()
   const [selectedChat, setSelectedChat] = useState(null)
   const [messageText, setMessageText] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -89,6 +91,15 @@ const MessagesPage = () => {
       otherUser
     })
   }
+
+  // Auto-open chat if navigated from Team page with specific user
+  useEffect(() => {
+    const openChatWithUser = location.state?.openChatWithUser
+    if (openChatWithUser && user?.uid && !loading) {
+      handleStartConversation(openChatWithUser)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, user?.uid, loading])
 
   const filteredConversations = conversations.filter(conv => {
     const otherUserId = conv.participants.find(id => id !== user?.uid)

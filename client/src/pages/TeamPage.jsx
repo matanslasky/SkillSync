@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar } from 'lucide-react'
 import { mockUsers } from '../data/mockData'
@@ -105,8 +106,10 @@ const StatCard = ({ icon, label, value }) => (
 )
 
 const TeamMemberCard = ({ member }) => {
+  const navigate = useNavigate()
+  
   const handleMessage = () => {
-    window.location.href = '/messages'
+    navigate('/messages', { state: { openChatWithUser: member } })
   }
 
   const handleGithub = () => {
