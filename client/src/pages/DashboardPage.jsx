@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
+import NotificationBell from '../components/NotificationBell'
 import ProgressBar from '../components/ProgressBar'
 import CommitmentGauge from '../components/CommitmentGauge'
 import TeamList from '../components/TeamList'
@@ -315,11 +316,14 @@ const DashboardPage = () => {
       <main className="flex-1 overflow-y-auto">
         <div className="p-8">
           {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">
-              Welcome back, <span className="text-neon-green">{user?.name || 'Developer'}</span>
-            </h2>
-            <p className="text-gray-500">Here's what's happening with your projects today.</p>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">
+                Welcome back, <span className="text-neon-green">{user?.name || 'Developer'}</span>
+              </h2>
+              <p className="text-gray-500">Here's what's happening with your projects today.</p>
+            </div>
+            <NotificationBell />
           </div>
 
           {/* Tabs */}

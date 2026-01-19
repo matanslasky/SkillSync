@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
+import NotificationBell from '../components/NotificationBell'
 import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
@@ -89,13 +90,16 @@ const Marketplace = () => {
               <h2 className="text-3xl font-bold mb-2">Project Marketplace</h2>
               <p className="text-gray-500">Discover exciting student-led projects or create your own</p>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
-            >
-              <Plus size={20} />
-              Create Project
-            </button>
+            <div className="flex items-center gap-4">
+              <NotificationBell />
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+              >
+                <Plus size={20} />
+                Create Project
+              </button>
+            </div>
           </div>
 
           {/* Search and Filter */}

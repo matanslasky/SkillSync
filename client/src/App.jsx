@@ -11,6 +11,8 @@ import Settings from './pages/Settings'
 import TeamPage from './pages/TeamPage'
 import MessagesPage from './pages/MessagesPage'
 import AssignmentsPage from './pages/AssignmentsPage'
+import About from './pages/About'
+import AdminDashboard from './pages/AdminDashboard'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +39,8 @@ function App() {
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/assignments" element={<AssignmentsPage />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </AuthProvider>
