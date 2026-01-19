@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark text-white font-sans;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .neon-text-green {
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+  }
+  .neon-text-blue {
+    text-shadow: 0 0 10px rgba(0, 184, 255, 0.5);
+  }
+  .neon-text-pink {
+    text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+  }
+  
+  .glass-effect {
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
