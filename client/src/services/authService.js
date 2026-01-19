@@ -36,7 +36,7 @@ export const register = async (userData) => {
 
 export const login = async (email, password) => {
   // Check for admin credentials
-  if (email === 'admin' && password === '12345678') {
+  if (email === 'admin' && password === 'SkillSync@Admin2026!') {
     // Return admin user object
     return {
       user: {
