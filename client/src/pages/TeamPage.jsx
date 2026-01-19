@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
-import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar, Grid, List } from 'lucide-react'
+import InviteToTeamModal from '../components/InviteToTeamModal'
+import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar, Grid, List, UserPlus } from 'lucide-react'
 import { mockUsers } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import ProgressBar from '../components/ProgressBar'
@@ -14,6 +15,13 @@ const TeamPage = () => {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [useMockData, setUseMockData] = useState(false)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const [selectedMember, setSelectedMember] = useState(null)
+
+  const handleInvite = (member) => {
+    setSelectedMember(member)
+    setInviteModalOpen(true)
+  }
 
   // Load team members from Firestore
   useEffect(() => {
@@ -173,15 +181,16 @@ const TeamPage = () => {
               </div>
             ))}
           </div>
-        ) : (
-          <div className={viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-            : "space-y-4"
-          }>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMembers.map(member => (
-              viewMode === 'grid' 
-                ? <TeamMemberCard key={member.uid || member.id} member={member} />
-                : <TeamMemberListItem key={member.uid || member.id} member={member} />
+              <TeamMemberCard key={member.uid || member.id} member={member} onInvite={handleInvite} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredMembers.map(member => (
+              <TeamMemberListItem key={member.uid || member.id} member={member} onInvite={handleInvite} />
             ))}
           </div>
         )}
@@ -195,6 +204,12 @@ const TeamPage = () => {
           </div>
         )}
       </main>
+      
+      <InviteToTeamModal 
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        recipientUser={selectedMember}
+      />
     </div>
   )
 }
@@ -209,7 +224,7 @@ const StatCard = ({ icon, label, value }) => (
   </div>
 )
 
-const TeamMemberCard = ({ member }) => {
+const TeamMemberCard = ({ member, onInvite }) => {
   const navigate = useNavigate()
   
   const handleMessage = () => {
@@ -280,6 +295,13 @@ const TeamMemberCard = ({ member }) => {
       {/* Actions - Always at bottom */}
       <div className="flex gap-2 mt-auto">
         <button 
+          onClick={() => onInvite(member)}
+          className="flex-1 flex items-center justify-center gap-2 bg-neon-blue/10 text-neon-blue border border-neon-blue/30 py-2 rounded-lg hover:bg-neon-blue/20 transition-all text-sm"
+        >
+          <UserPlus size={16} />
+          Invite
+        </button>
+        <button 
           onClick={handleMessage}
           className="flex-1 flex items-center justify-center gap-2 bg-neon-green/10 text-neon-green border border-neon-green/30 py-2 rounded-lg hover:bg-neon-green/20 transition-all text-sm"
         >
@@ -303,7 +325,7 @@ const TeamMemberCard = ({ member }) => {
   )
 }
 
-const TeamMemberListItem = ({ member }) => {
+const TeamMemberListItem = ({ member, onInvite }) => {
   const navigate = useNavigate()
   
   const handleMessage = () => {
@@ -378,6 +400,13 @@ const TeamMemberListItem = ({ member }) => {
           >
             <Mail size={16} />
             Message
+          </button>
+          <button 
+            onClick={() => onInvite(member)}
+            className="flex items-center gap-2 bg-neon-blue/10 text-neon-blue border border-neon-blue/30 px-4 py-2 rounded-lg hover:bg-neon-blue/20 transition-all text-sm font-medium"
+          >
+            <UserPlus size={16} />
+            Invite to Project
           </button>
           <div className="flex gap-2">
             <button 

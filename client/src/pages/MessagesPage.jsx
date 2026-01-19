@@ -96,10 +96,18 @@ const MessagesPage = () => {
   useEffect(() => {
     const openChatWithUser = location.state?.openChatWithUser
     if (openChatWithUser && user?.uid && !loading) {
-      handleStartConversation(openChatWithUser)
+      const startChat = async () => {
+        if (!user?.uid) return
+        
+        const conversationId = await getOrCreateConversation(user.uid, openChatWithUser.id)
+        setSelectedChat({
+          conversationId,
+          otherUser: openChatWithUser
+        })
+      }
+      startChat()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, user?.uid, loading])
+  }, [location.state?.openChatWithUser, user?.uid, loading])
 
   const filteredConversations = conversations.filter(conv => {
     const otherUserId = conv.participants.find(id => id !== user?.uid)
