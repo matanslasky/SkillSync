@@ -1,22 +1,82 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
+import { getProjects, searchProjects } from '../services/projectService'
+import { useAuth } from '../contexts/AuthContext'
 
 const Marketplace = () => {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [useMockData, setUseMockData] = useState(false)
 
   const categories = ['All', 'Social Impact', 'EdTech', 'E-commerce', 'FinTech', 'HealthTech']
 
-  const filteredProjects = mockProjects.filter(project => {
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  // Load projects from Firestore
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true)
+        const filters = selectedCategory !== 'all' ? { category: selectedCategory } : {}
+        const fetchedProjects = await getProjects(filters)
+        
+        // If no projects exist, use mock data
+        if (fetchedProjects.length === 0) {
+          setProjects(mockProjects)
+          setUseMockData(true)
+        } else {
+          setProjects(fetchedProjects)
+          setUseMockData(false)
+        }
+      } catch (error) {
+        console.error('Error loading projects:', error)
+        // Fallback to mock data on error
+        setProjects(mockProjects)
+        setUseMockData(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadProjects()
+  }, [selectedCategory])
+
+  // Search handler with debounce
+  useEffect(() => {
+    if (!searchTerm) return
+    
+    const timeoutId = setTimeout(async () => {
+      if (useMockData) {
+        // Search mock data
+        const filtered = mockProjects.filter(project => {
+          const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               project.description.toLowerCase().includes(searchTerm.toLowerCase())
+          const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory
+          return matchesSearch && matchesCategory
+        })
+        setProjects(filtered)
+      } else {
+        try {
+          const results = await searchProjects(searchTerm)
+          const filtered = selectedCategory !== 'all' 
+            ? results.filter(p => p.category === selectedCategory)
+            : results
+          setProjects(filtered)
+        } catch (error) {
+          console.error('Error searching projects:', error)
+        }
+      }
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, selectedCategory, useMockData])
+
+  const filteredProjects = projects
 
   return (
     <div className="flex h-screen bg-dark">
@@ -64,20 +124,41 @@ const Marketplace = () => {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map(project => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse">
+                <div className="h-6 bg-gray-800 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-800 rounded w-full mb-2"></div>
+                <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+              </div>
+            ))
+          ) : (
+            filteredProjects.map(project => (
+              <ProjectCard key={project.id} project={project} />
+            ))
+          )}
         </div>
 
-        {filteredProjects.length === 0 && (
+        {!loading && filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500">No projects found. Try adjusting your search.</p>
+            {useMockData && (
+              <p className="text-gray-600 text-sm mt-2">Showing sample data - create your first project!</p>
+            )}
           </div>
         )}
 
         {/* Create Project Modal */}
         {showCreateModal && (
-          <CreateProjectModal onClose={() => setShowCreateModal(false)} />
+          <CreateProjectModal 
+            onClose={() => setShowCreateModal(false)} 
+            onProjectCreated={(newProject) => {
+              setProjects([newProject, ...projects])
+              setUseMockData(false)
+              setShowCreateModal(false)
+            }}
+          />
         )}
       </main>
     </div>
@@ -120,25 +201,66 @@ const ProjectCard = ({ project }) => {
   )
 }
 
-const CreateProjectModal = ({ onClose }) => {
+const CreateProjectModal = ({ onClose, onProjectCreated }) => {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: 'Social Impact',
     rolesNeeded: []
   })
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Creating project:', formData)
-    // TODO: Implement Firebase project creation
-    onClose()
+    setError('')
+    setCreating(true)
+
+    try {
+      const { createProject } = await import('../services/projectService')
+      
+      const projectData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        lookingFor: formData.rolesNeeded,
+        creatorId: user?.uid || 'unknown',
+        creatorName: user?.name || 'Anonymous',
+        teamMembers: [user?.uid || 'unknown'],
+        team: [{
+          id: user?.uid || 'unknown',
+          name: user?.name || 'Anonymous',
+          role: user?.role || 'Creator'
+        }],
+        progress: 0,
+        deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
+        status: 'active'
+      }
+
+      const newProject = await createProject(projectData)
+      
+      if (onProjectCreated) {
+        onProjectCreated(newProject)
+      }
+    } catch (error) {
+      console.error('Error creating project:', error)
+      setError('Failed to create project. Please try again.')
+    } finally {
+      setCreating(false)
+    }
   }
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="glass-effect rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-800">
         <h3 className="text-2xl font-bold mb-6">Create New Project</h3>
+
+        {error && (
+          <div className="mb-4 p-3 bg-neon-pink/10 border border-neon-pink/30 rounded-lg text-neon-pink text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -215,15 +337,17 @@ const CreateProjectModal = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-dark-lighter border border-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-dark-light transition-all"
+              disabled={creating}
+              className="flex-1 bg-dark-lighter border border-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-dark-light transition-all disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 bg-neon-green text-dark font-semibold py-3 rounded-lg hover:shadow-neon-green transition-all"
+              disabled={creating}
+              className="flex-1 bg-neon-green text-dark font-semibold py-3 rounded-lg hover:shadow-neon-green transition-all disabled:opacity-50"
             >
-              Create Project
+              {creating ? 'Creating...' : 'Create Project'}
             </button>
           </div>
         </form>

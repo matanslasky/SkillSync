@@ -1,24 +1,81 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { Search, Mail, Github, Linkedin, Trophy, TrendingUp, Calendar, Grid, List } from 'lucide-react'
 import { mockUsers } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import ProgressBar from '../components/ProgressBar'
+import { getAllUsers, searchUsers } from '../services/userService'
 
 const TeamPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
   const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [useMockData, setUseMockData] = useState(false)
 
-  const filteredMembers = mockUsers.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.role.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = filterRole === 'all' || member.role === filterRole
-    return matchesSearch && matchesRole
-  })
+  // Load team members from Firestore
+  useEffect(() => {
+    const loadMembers = async () => {
+      try {
+        setLoading(true)
+        const filters = filterRole !== 'all' ? { role: filterRole } : {}
+        const fetchedUsers = await getAllUsers(filters)
+        
+        // If no users exist, use mock data
+        if (fetchedUsers.length === 0) {
+          setMembers(mockUsers)
+          setUseMockData(true)
+        } else {
+          setMembers(fetchedUsers)
+          setUseMockData(false)
+        }
+      } catch (error) {
+        console.error('Error loading team members:', error)
+        // Fallback to mock data on error
+        setMembers(mockUsers)
+        setUseMockData(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadMembers()
+  }, [filterRole])
 
-  const roles = ['all', ...new Set(mockUsers.map(u => u.role))]
+  // Search handler with debounce
+  useEffect(() => {
+    if (!searchTerm) return
+    
+    const timeoutId = setTimeout(async () => {
+      if (useMockData) {
+        // Search mock data
+        const filtered = mockUsers.filter(member => {
+          const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               member.role.toLowerCase().includes(searchTerm.toLowerCase())
+          const matchesRole = filterRole === 'all' || member.role === filterRole
+          return matchesSearch && matchesRole
+        })
+        setMembers(filtered)
+      } else {
+        try {
+          const results = await searchUsers(searchTerm)
+          const filtered = filterRole !== 'all' 
+            ? results.filter(m => m.role === filterRole)
+            : results
+          setMembers(filtered)
+        } catch (error) {
+          console.error('Error searching users:', error)
+        }
+      }
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, filterRole, useMockData])
+
+  const filteredMembers = members
+  const roles = ['all', ...new Set(members.map(u => u.role))]
 
   return (
     <div className="flex h-screen bg-dark">
@@ -86,17 +143,17 @@ const TeamPage = () => {
           <StatCard
             icon={<Trophy className="text-neon-green" />}
             label="Total Members"
-            value={mockUsers.length.toString()}
+            value={members.length.toString()}
           />
           <StatCard
             icon={<TrendingUp className="text-neon-blue" />}
             label="Avg Commitment"
-            value={Math.round(mockUsers.reduce((sum, u) => sum + u.commitmentScore, 0) / mockUsers.length)}
+            value={members.length > 0 ? Math.round(members.reduce((sum, u) => sum + (u.commitmentScore || 50), 0) / members.length) : 0}
           />
           <StatCard
             icon={<Calendar className="text-neon-pink" />}
             label="Online Now"
-            value={mockUsers.filter(u => u.status === 'online').length.toString()}
+            value={members.filter(u => u.status === 'online').length.toString()}
           />
           <StatCard
             icon={<Trophy className="text-neon-purple" />}
@@ -106,20 +163,35 @@ const TeamPage = () => {
         </div>
 
         {/* Team Grid or List */}
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-          : "space-y-4"
-        }>
-          {filteredMembers.map(member => (
-            viewMode === 'grid' 
-              ? <TeamMemberCard key={member.id} member={member} />
-              : <TeamMemberListItem key={member.id} member={member} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse">
+                <div className="h-6 bg-gray-800 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-800 rounded w-full mb-2"></div>
+                <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+            : "space-y-4"
+          }>
+            {filteredMembers.map(member => (
+              viewMode === 'grid' 
+                ? <TeamMemberCard key={member.uid || member.id} member={member} />
+                : <TeamMemberListItem key={member.uid || member.id} member={member} />
+            ))}
+          </div>
+        )}
 
-        {filteredMembers.length === 0 && (
+        {!loading && filteredMembers.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500">No team members found. Try adjusting your filters.</p>
+            {useMockData && (
+              <p className="text-gray-600 text-sm mt-2">Showing sample data - register real users to see them here!</p>
+            )}
           </div>
         )}
       </main>

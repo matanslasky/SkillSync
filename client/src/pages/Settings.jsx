@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { User, Mail, Lock, Bell, Palette, Shield, Github, Linkedin } from 'lucide-react'
 import { ROLE_LIST } from '../constants/roles'
 import { getUserSettings, saveUserSettings } from '../services/settingsService'
+import ImageUpload from '../components/ImageUpload'
 
 const Settings = () => {
   const { user } = useAuth()
@@ -113,6 +114,8 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
   })
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [selectedImage, setSelectedImage] = useState(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Load profile data from settings when available
   useEffect(() => {
@@ -136,6 +139,21 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
     setSaveMessage('')
     
     try {
+      // Upload image first if one was selected
+      let photoURL = user?.photoURL
+      if (selectedImage) {
+        setUploadingImage(true)
+        const { uploadProfilePicture } = await import('../services/storageService')
+        const { updateProfilePicture } = await import('../services/userService')
+        
+        const result = await uploadProfilePicture(user.uid, selectedImage)
+        photoURL = result.url
+        
+        // Update photo URL in user profile
+        await updateProfilePicture(user.uid, photoURL)
+        setUploadingImage(false)
+      }
+      
       const profileData = {
         ...formData,
         skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean)
@@ -143,7 +161,7 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
       
       const newSettings = {
         ...settings,
-        profile: profileData
+        profile: { ...profileData, photoURL }
       }
       
       await updateSettings(newSettings)
@@ -154,11 +172,13 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
       
       setSaveMessage('Profile updated successfully!')
       setTimeout(() => setSaveMessage(''), 3000)
+      setSelectedImage(null)
     } catch (error) {
       console.error('Error updating profile:', error)
       setSaveMessage('Failed to save changes')
     } finally {
       setSaving(false)
+      setUploadingImage(false)
     }
   }
 
@@ -176,17 +196,17 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
         </div>
       )}
       
-      {/* Avatar */}
-      <div className="flex items-center gap-6 mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-3xl font-bold">
-          {user?.name?.charAt(0) || 'U'}
-        </div>
-        <div>
-          <button className="px-4 py-2 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-all text-sm font-semibold mb-2">
-            Change Avatar
-          </button>
-          <p className="text-xs text-gray-500">JPG, PNG or GIF. Max 5MB.</p>
-        </div>
+      {/* Avatar Upload */}
+      <div className="mb-8">
+        <ImageUpload 
+          currentImage={user?.photoURL}
+          onImageSelect={(file) => setSelectedImage(file)}
+          onImageRemove={() => setSelectedImage(null)}
+          label="Profile Picture"
+        />
+        {uploadingImage && (
+          <p className="text-sm text-neon-blue mt-2">Uploading image...</p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
