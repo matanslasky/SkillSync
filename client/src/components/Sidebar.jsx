@@ -4,6 +4,7 @@ import {
   MessageSquare, 
   Settings as SettingsIcon, 
   Users, 
+  ClipboardList,
   LogOut 
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
@@ -16,6 +17,7 @@ const Sidebar = () => {
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/marketplace', icon: Briefcase, label: 'Projects' },
     { path: '/team', icon: Users, label: 'Team' },
+    { path: '/assignments', icon: ClipboardList, label: 'Assignments' },
     { path: '/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/settings', icon: SettingsIcon, label: 'Settings' },
   ]

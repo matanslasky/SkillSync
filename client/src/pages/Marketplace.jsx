@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
-import { mockProjects, calculateDaysRemaining, getRoleIcon } from '../data/mockData'
+import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
 
 const Marketplace = () => {
@@ -88,17 +88,17 @@ const ProjectCard = ({ project }) => {
   const daysRemaining = calculateDaysRemaining(project.deadline)
   
   return (
-    <div className="glass-effect rounded-xl p-6 border border-gray-800 hover:border-neon-green/30 transition-all cursor-pointer">
+    <div className="glass-effect rounded-xl p-6 border border-gray-800 hover:border-neon-green/30 transition-all cursor-pointer flex flex-col h-full">
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">{project.name}</h3>
-        <span className="px-2 py-1 bg-neon-blue/20 text-neon-blue text-xs rounded-full border border-neon-blue/30">
+        <h3 className="text-lg font-bold text-white flex-1">{project.name}</h3>
+        <span className="px-3 py-1 bg-neon-blue/20 text-neon-blue text-xs font-semibold rounded-full border border-neon-blue/30 flex items-center justify-center">
           {project.category}
         </span>
       </div>
 
       <p className="text-sm text-gray-400 mb-4 line-clamp-2">{project.description}</p>
 
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1">
         <div className="flex items-center gap-2 text-sm">
           <Users size={16} className="text-gray-500" />
           <span className="text-gray-400">{project.team.length} members</span>

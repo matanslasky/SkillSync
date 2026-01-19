@@ -8,6 +8,9 @@ import Marketplace from './pages/Marketplace'
 import ProjectView from './pages/ProjectView'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
+import TeamPage from './pages/TeamPage'
+import MessagesPage from './pages/MessagesPage'
+import AssignmentsPage from './pages/AssignmentsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +33,9 @@ function App() {
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/project/:id" element={<ProjectView />} />
             <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/assignments" element={<AssignmentsPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
