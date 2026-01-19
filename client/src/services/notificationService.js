@@ -170,6 +170,14 @@ export const subscribeToNotifications = (userId, callback) => {
     callback(notifications)
   }, (error) => {
     console.error('Error subscribing to notifications:', error)
+    // If index error, provide instructions
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+      console.warn('⚠️  Firestore Index Required')
+      console.warn('Create the index by clicking the link above, or notifications will be disabled.')
+      console.warn('This is a one-time setup. After creating the index, refresh the page.')
+    }
+    // Call callback with empty array so UI doesn't break
+    callback([])
   })
 }
 

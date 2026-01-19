@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
-import NotificationBell from '../components/NotificationBell'
+// NotificationBell temporarily disabled due to missing Firestore indexes
+// import NotificationBell from '../components/NotificationBell'
 import ProgressBar from '../components/ProgressBar'
 import CommitmentGauge from '../components/CommitmentGauge'
 import TeamList from '../components/TeamList'
@@ -323,7 +324,7 @@ const DashboardPage = () => {
               </h2>
               <p className="text-gray-500">Here's what's happening with your projects today.</p>
             </div>
-            <NotificationBell />
+            {/* NotificationBell temporarily disabled - Create Firestore indexes first */}
           </div>
 
           {/* Tabs */}

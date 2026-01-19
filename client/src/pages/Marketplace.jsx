@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
-import NotificationBell from '../components/NotificationBell'
+// NotificationBell temporarily disabled due to missing Firestore indexes
+// import NotificationBell from '../components/NotificationBell'
 import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
@@ -91,7 +92,7 @@ const Marketplace = () => {
               <p className="text-gray-500">Discover exciting student-led projects or create your own</p>
             </div>
             <div className="flex items-center gap-4">
-              <NotificationBell />
+              {/* NotificationBell temporarily disabled - Create Firestore indexes first */}
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"

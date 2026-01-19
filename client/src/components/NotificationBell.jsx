@@ -15,18 +15,25 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [indexError, setIndexError] = useState(false)
 
   useEffect(() => {
     if (!user?.uid) return
 
     // Subscribe to real-time notifications
-    const unsubscribe = subscribeToNotifications(user.uid, (newNotifications) => {
-      setNotifications(newNotifications)
-      const unread = newNotifications.filter(n => !n.read).length
-      setUnreadCount(unread)
-    })
+    try {
+      const unsubscribe = subscribeToNotifications(user.uid, (newNotifications) => {
+        setNotifications(newNotifications)
+        const unread = newNotifications.filter(n => !n.read).length
+        setUnreadCount(unread)
+        setIndexError(false)
+      })
 
-    return () => unsubscribe()
+      return () => unsubscribe()
+    } catch (error) {
+      console.error('Failed to subscribe to notifications:', error)
+      setIndexError(true)
+    }
   }, [user?.uid])
 
   const handleMarkAsRead = async (notificationId) => {
