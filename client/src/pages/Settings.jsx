@@ -1,12 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import { useAuth } from '../contexts/AuthContext'
 import { User, Mail, Lock, Bell, Palette, Shield, Github, Linkedin } from 'lucide-react'
 import { ROLE_LIST } from '../constants/roles'
+import { getUserSettings, saveUserSettings } from '../services/settingsService'
 
 const Settings = () => {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
+  const [settings, setSettings] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Load user settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (user?.uid) {
+        try {
+          const userSettings = await getUserSettings(user.uid)
+          setSettings(userSettings)
+        } catch (error) {
+          console.error('Failed to load settings:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    
+    loadSettings()
+  }, [user?.uid])
+
+  const updateSettings = async (newSettings) => {
+    setSettings(newSettings)
+    if (user?.uid) {
+      try {
+        await saveUserSettings(user.uid, newSettings)
+      } catch (error) {
+        console.error('Failed to save settings:', error)
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-dark">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-gray-500">Loading settings...</div>
+        </main>
+      </div>
+    )
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: <User size={18} /> },
@@ -47,11 +90,11 @@ const Settings = () => {
 
           {/* Content */}
           <div className="flex-1">
-            {activeTab === 'profile' && <ProfileSettings user={user} />}
+            {activeTab === 'profile' && <ProfileSettings user={user} settings={settings} updateSettings={updateSettings} />}
             {activeTab === 'account' && <AccountSettings user={user} />}
-            {activeTab === 'notifications' && <NotificationSettings />}
-            {activeTab === 'appearance' && <AppearanceSettings />}
-            {activeTab === 'privacy' && <PrivacySettings />}
+            {activeTab === 'notifications' && <NotificationSettings settings={settings} updateSettings={updateSettings} />}
+            {activeTab === 'appearance' && <AppearanceSettings settings={settings} updateSettings={updateSettings} />}
+            {activeTab === 'privacy' && <PrivacySettings settings={settings} updateSettings={updateSettings} />}
           </div>
         </div>
       </main>
@@ -59,7 +102,7 @@ const Settings = () => {
   )
 }
 
-const ProfileSettings = ({ user }) => {
+const ProfileSettings = ({ user, settings, updateSettings }) => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     role: user?.role || 'Developer',
@@ -68,16 +111,70 @@ const ProfileSettings = ({ user }) => {
     github: '',
     linkedin: '',
   })
+  const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
-  const handleSubmit = (e) => {
+  // Load profile data from settings when available
+  useEffect(() => {
+    if (settings?.profile) {
+      setFormData({
+        name: settings.profile.name || user?.name || '',
+        role: settings.profile.role || user?.role || 'Developer',
+        bio: settings.profile.bio || user?.bio || '',
+        skills: Array.isArray(settings.profile.skills) 
+          ? settings.profile.skills.join(', ') 
+          : settings.profile.skills || '',
+        github: settings.profile.github || '',
+        linkedin: settings.profile.linkedin || '',
+      })
+    }
+  }, [settings, user])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: Update user profile in Firebase
-    console.log('Updating profile:', formData)
+    setSaving(true)
+    setSaveMessage('')
+    
+    try {
+      const profileData = {
+        ...formData,
+        skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean)
+      }
+      
+      const newSettings = {
+        ...settings,
+        profile: profileData
+      }
+      
+      await updateSettings(newSettings)
+      
+      // Also update the main user profile
+      const { updateUserProfile } = await import('../services/settingsService')
+      await updateUserProfile(user.uid, profileData)
+      
+      setSaveMessage('Profile updated successfully!')
+      setTimeout(() => setSaveMessage(''), 3000)
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setSaveMessage('Failed to save changes')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="glass-effect rounded-xl p-6 border border-gray-800">
       <h3 className="text-xl font-bold mb-6">Profile Information</h3>
+      
+      {saveMessage && (
+        <div className={`mb-4 p-3 rounded-lg text-sm ${
+          saveMessage.includes('success') 
+            ? 'bg-neon-green/10 border border-neon-green/30 text-neon-green' 
+            : 'bg-neon-pink/10 border border-neon-pink/30 text-neon-pink'
+        }`}>
+          {saveMessage}
+        </div>
+      )}
       
       {/* Avatar */}
       <div className="flex items-center gap-6 mb-8">
@@ -183,12 +280,28 @@ const ProfileSettings = ({ user }) => {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+            disabled={saving}
+            className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all disabled:opacity-50"
           >
-            Save Changes
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
           <button
             type="button"
+            onClick={() => {
+              // Reset to loaded settings
+              if (settings?.profile) {
+                setFormData({
+                  name: settings.profile.name || user?.name || '',
+                  role: settings.profile.role || user?.role || 'Developer',
+                  bio: settings.profile.bio || user?.bio || '',
+                  skills: Array.isArray(settings.profile.skills) 
+                    ? settings.profile.skills.join(', ') 
+                    : settings.profile.skills || '',
+                  github: settings.profile.github || '',
+                  linkedin: settings.profile.linkedin || '',
+                })
+              }
+            }}
             className="px-6 py-3 bg-dark-lighter border border-gray-800 text-white font-semibold rounded-lg hover:bg-dark-light transition-all"
           >
             Cancel
@@ -275,7 +388,7 @@ const AccountSettings = ({ user }) => {
   )
 }
 
-const NotificationSettings = () => {
+const NotificationSettings = ({ settings, updateSettings }) => {
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     projectUpdates: true,
@@ -284,6 +397,24 @@ const NotificationSettings = () => {
     weeklyDigest: false,
     marketingEmails: false,
   })
+
+  // Load notification settings
+  useEffect(() => {
+    if (settings?.notifications) {
+      setNotifications(settings.notifications)
+    }
+  }, [settings])
+
+  const handleToggle = async (key) => {
+    const newNotifications = { ...notifications, [key]: !notifications[key] }
+    setNotifications(newNotifications)
+    
+    const newSettings = {
+      ...settings,
+      notifications: newNotifications
+    }
+    await updateSettings(newSettings)
+  }
 
   return (
     <div className="glass-effect rounded-xl p-6 border border-gray-800">
@@ -304,7 +435,7 @@ const NotificationSettings = () => {
               <input
                 type="checkbox"
                 checked={value}
-                onChange={() => setNotifications({ ...notifications, [key]: !value })}
+                onChange={() => handleToggle(key)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-green"></div>
@@ -316,7 +447,41 @@ const NotificationSettings = () => {
   )
 }
 
-const AppearanceSettings = () => {
+const AppearanceSettings = ({ settings, updateSettings }) => {
+  const [appearance, setAppearance] = useState({
+    theme: 'dark',
+    accentColor: 'green'
+  })
+
+  // Load appearance settings
+  useEffect(() => {
+    if (settings?.appearance) {
+      setAppearance(settings.appearance)
+    }
+  }, [settings])
+
+  const handleThemeChange = async (theme) => {
+    const newAppearance = { ...appearance, theme }
+    setAppearance(newAppearance)
+    
+    const newSettings = {
+      ...settings,
+      appearance: newAppearance
+    }
+    await updateSettings(newSettings)
+  }
+
+  const handleAccentChange = async (color) => {
+    const newAppearance = { ...appearance, accentColor: color }
+    setAppearance(newAppearance)
+    
+    const newSettings = {
+      ...settings,
+      appearance: newAppearance
+    }
+    await updateSettings(newSettings)
+  }
+
   return (
     <div className="glass-effect rounded-xl p-6 border border-gray-800">
       <h3 className="text-xl font-bold mb-6">Appearance</h3>
@@ -327,9 +492,20 @@ const AppearanceSettings = () => {
             Theme
           </label>
           <div className="grid grid-cols-3 gap-4">
-            <button className="p-4 bg-neon-green/10 border-2 border-neon-green rounded-lg">
+            <button 
+              onClick={() => handleThemeChange('dark')}
+              className={`p-4 border-2 rounded-lg ${
+                appearance.theme === 'dark' 
+                  ? 'bg-neon-green/10 border-neon-green' 
+                  : 'bg-dark-lighter border-gray-800 opacity-50'
+              }`}
+            >
               <div className="w-full h-16 bg-dark rounded mb-2"></div>
-              <p className="text-sm font-medium text-neon-green">Dark (Active)</p>
+              <p className={`text-sm font-medium ${
+                appearance.theme === 'dark' ? 'text-neon-green' : 'text-gray-500'
+              }`}>
+                {appearance.theme === 'dark' ? 'Dark (Active)' : 'Dark'}
+              </p>
             </button>
             <button className="p-4 bg-dark-lighter border-2 border-gray-800 rounded-lg opacity-50 cursor-not-allowed">
               <div className="w-full h-16 bg-white rounded mb-2"></div>
@@ -347,10 +523,30 @@ const AppearanceSettings = () => {
             Accent Color
           </label>
           <div className="flex gap-3">
-            <button className="w-12 h-12 rounded-full bg-neon-green border-2 border-white"></button>
-            <button className="w-12 h-12 rounded-full bg-neon-blue border-2 border-transparent opacity-50"></button>
-            <button className="w-12 h-12 rounded-full bg-neon-pink border-2 border-transparent opacity-50"></button>
-            <button className="w-12 h-12 rounded-full bg-neon-purple border-2 border-transparent opacity-50"></button>
+            <button 
+              onClick={() => handleAccentChange('green')}
+              className={`w-12 h-12 rounded-full bg-neon-green border-2 ${
+                appearance.accentColor === 'green' ? 'border-white' : 'border-transparent opacity-50'
+              }`}
+            ></button>
+            <button 
+              onClick={() => handleAccentChange('blue')}
+              className={`w-12 h-12 rounded-full bg-neon-blue border-2 ${
+                appearance.accentColor === 'blue' ? 'border-white' : 'border-transparent opacity-50'
+              }`}
+            ></button>
+            <button 
+              onClick={() => handleAccentChange('pink')}
+              className={`w-12 h-12 rounded-full bg-neon-pink border-2 ${
+                appearance.accentColor === 'pink' ? 'border-white' : 'border-transparent opacity-50'
+              }`}
+            ></button>
+            <button 
+              onClick={() => handleAccentChange('purple')}
+              className={`w-12 h-12 rounded-full bg-neon-purple border-2 ${
+                appearance.accentColor === 'purple' ? 'border-white' : 'border-transparent opacity-50'
+              }`}
+            ></button>
           </div>
         </div>
       </div>
@@ -358,7 +554,42 @@ const AppearanceSettings = () => {
   )
 }
 
-const PrivacySettings = () => {
+const PrivacySettings = ({ settings, updateSettings }) => {
+  const [privacy, setPrivacy] = useState({
+    profileVisibility: 'everyone',
+    showOnlineStatus: true,
+    showCommitmentScore: true
+  })
+
+  // Load privacy settings
+  useEffect(() => {
+    if (settings?.privacy) {
+      setPrivacy(settings.privacy)
+    }
+  }, [settings])
+
+  const handleVisibilityChange = async (value) => {
+    const newPrivacy = { ...privacy, profileVisibility: value }
+    setPrivacy(newPrivacy)
+    
+    const newSettings = {
+      ...settings,
+      privacy: newPrivacy
+    }
+    await updateSettings(newSettings)
+  }
+
+  const handleToggle = async (key) => {
+    const newPrivacy = { ...privacy, [key]: !privacy[key] }
+    setPrivacy(newPrivacy)
+    
+    const newSettings = {
+      ...settings,
+      privacy: newPrivacy
+    }
+    await updateSettings(newSettings)
+  }
+
   return (
     <div className="glass-effect rounded-xl p-6 border border-gray-800">
       <h3 className="text-xl font-bold mb-6">Privacy & Security</h3>
@@ -369,10 +600,14 @@ const PrivacySettings = () => {
             <p className="font-medium text-white">Profile Visibility</p>
             <p className="text-sm text-gray-500">Who can see your profile</p>
           </div>
-          <select className="bg-dark-lighter border border-gray-800 rounded-lg px-4 py-2 text-white focus:border-neon-green focus:outline-none">
-            <option>Everyone</option>
-            <option>Team Members Only</option>
-            <option>Private</option>
+          <select 
+            value={privacy.profileVisibility}
+            onChange={(e) => handleVisibilityChange(e.target.value)}
+            className="bg-dark-lighter border border-gray-800 rounded-lg px-4 py-2 text-white focus:border-neon-green focus:outline-none"
+          >
+            <option value="everyone">Everyone</option>
+            <option value="team">Team Members Only</option>
+            <option value="private">Private</option>
           </select>
         </div>
 
@@ -382,7 +617,12 @@ const PrivacySettings = () => {
             <p className="text-sm text-gray-500">Let others see when you're online</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" defaultChecked className="sr-only peer" />
+            <input 
+              type="checkbox" 
+              checked={privacy.showOnlineStatus}
+              onChange={() => handleToggle('showOnlineStatus')}
+              className="sr-only peer" 
+            />
             <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-green"></div>
           </label>
         </div>
@@ -393,7 +633,12 @@ const PrivacySettings = () => {
             <p className="text-sm text-gray-500">Display your score on your profile</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" defaultChecked className="sr-only peer" />
+            <input 
+              type="checkbox" 
+              checked={privacy.showCommitmentScore}
+              onChange={() => handleToggle('showCommitmentScore')}
+              className="sr-only peer" 
+            />
             <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-green"></div>
           </label>
         </div>

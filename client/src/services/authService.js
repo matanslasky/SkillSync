@@ -35,6 +35,20 @@ export const register = async (userData) => {
 }
 
 export const login = async (email, password) => {
+  // Check for admin credentials
+  if (email === 'admin' && password === '12345678') {
+    // Return admin user object
+    return {
+      user: {
+        uid: 'admin-user',
+        email: 'admin@skillsync.com',
+        name: 'Admin',
+        role: 'Admin',
+        isAdmin: true
+      }
+    }
+  }
+  
   const userCredential = await signInWithEmailAndPassword(auth, email, password)
   const user = userCredential.user
   
@@ -50,11 +64,21 @@ export const login = async (email, password) => {
 }
 
 export const logout = async () => {
+  // Clear admin session if exists
+  sessionStorage.removeItem('adminUser')
+  
   await signOut(auth)
 }
 
 export const getCurrentUser = async () => {
   const user = auth.currentUser
+  
+  // Check if admin is logged in (stored in session)
+  const adminUser = sessionStorage.getItem('adminUser')
+  if (adminUser) {
+    return JSON.parse(adminUser)
+  }
+  
   if (!user) return null
   
   const userDoc = await getDoc(doc(db, 'users', user.uid))

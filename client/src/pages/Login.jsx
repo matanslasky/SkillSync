@@ -16,10 +16,16 @@ const Login = () => {
     setLoading(true)
 
     try {
-      await login(formData.email, formData.password)
+      const result = await login(formData.email, formData.password)
+      
+      // Store admin session if admin login
+      if (result.user?.isAdmin) {
+        sessionStorage.setItem('adminUser', JSON.stringify(result.user))
+      }
+      
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
+      setError(err.message || 'Login failed')
     } finally {
       setLoading(false)
     }
@@ -50,16 +56,16 @@ const Login = () => {
             {/* Email Input */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
-                Email
+                Email or Username
               </label>
               <div className="relative">
                 <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
-                  type="email"
+                  type="text"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-dark-lighter border border-gray-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
-                  placeholder="you@example.com"
+                  placeholder="you@example.com or admin"
                   required
                 />
               </div>
