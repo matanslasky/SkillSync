@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar'
 // import NotificationBell from '../components/NotificationBell'
 import ProgressBar from '../components/ProgressBar'
 import CommitmentGauge from '../components/CommitmentGauge'
+import CommitmentScoreGauge from '../components/CommitmentScoreGauge'
 import TeamList from '../components/TeamList'
 import AIAssistantCard from '../components/AIAssistantCard'
 import RoleContribution from '../components/RoleContribution'
@@ -197,13 +198,7 @@ const DashboardPage = () => {
         <div className="space-y-6">
           {/* Commitment Score */}
           <div className="glass-effect rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-6">Your Commitment Score</h3>
-            <div className="flex justify-center">
-              <CommitmentGauge score={commitmentScore} />
-            </div>
-            <div className="mt-6 space-y-2">
-              <RoleContribution role={user?.role || 'Developer'} />
-            </div>
+            <CommitmentScoreGauge userId={user?.uid} showHistory={true} />
           </div>
 
           {/* AI Assistant Card */}

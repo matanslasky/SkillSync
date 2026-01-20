@@ -5,16 +5,18 @@ import SynergyMeter from '../components/SynergyMeter'
 import MilestoneTimeline from '../components/MilestoneTimeline'
 import JoinRequestModal from '../components/JoinRequestModal'
 import JoinRequestManager from '../components/JoinRequestManager'
+import KanbanBoard from '../components/KanbanBoard'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
-import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp } from 'lucide-react'
+import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare } from 'lucide-react'
 
 const ProjectView = () => {
   const { id } = useParams()
   const { user } = useAuth()
   const project = getProjectById(id)
   const [showJoinModal, setShowJoinModal] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
 
   if (!project) {
     return (
@@ -218,7 +220,37 @@ const ProjectView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-8">
+          {/* Tabs Navigation */}
+          {isTeamMember && (
+            <div className="flex gap-4 mb-8 border-b border-gray-800">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-6 py-3 font-semibold transition-all ${
+                  activeTab === 'overview'
+                    ? 'text-neon-green border-b-2 border-neon-green'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('tasks')}
+                className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
+                  activeTab === 'tasks'
+                    ? 'text-neon-green border-b-2 border-neon-green'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <KanbanSquare size={18} />
+                Kanban Board
+              </button>
+            </div>
+          )}
+
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <>
+              <div className="grid grid-cols-3 gap-8">
             {/* Left Column - Team & Tasks */}
             <div className="col-span-2 space-y-8">
               {/* Join Request Manager (only for project owners) */}
@@ -382,12 +414,21 @@ const ProjectView = () => {
                 </ul>
               </div>
             </div>
-          </div>
-          
-          {/* Milestone Timeline - Full Width */}
-          <div className="mt-8">
-            <MilestoneTimeline projectId={id} team={teamMembers} />
-          </div>
+              </div>
+              
+              {/* Milestone Timeline - Full Width */}
+              <div className="mt-8">
+                <MilestoneTimeline projectId={id} team={teamMembers} />
+              </div>
+            </>
+          )}
+
+          {/* Kanban Board Tab */}
+          {activeTab === 'tasks' && isTeamMember && (
+            <div>
+              <KanbanBoard projectId={id} />
+            </div>
+          )}
         </div>
       </main>
 
