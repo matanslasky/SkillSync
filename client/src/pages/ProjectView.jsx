@@ -1,22 +1,27 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import SynergyMeter from '../components/SynergyMeter'
 import MilestoneTimeline from '../components/MilestoneTimeline'
 import JoinRequestModal from '../components/JoinRequestModal'
 import JoinRequestManager from '../components/JoinRequestManager'
 import KanbanBoard from '../components/KanbanBoard'
+import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
-import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare } from 'lucide-react'
+import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare, Share2, Flag, Settings } from 'lucide-react'
 
 const ProjectView = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const project = getProjectById(id)
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [shareSuccess, setShareSuccess] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   if (!project) {
     return (
@@ -39,6 +44,27 @@ const ProjectView = () => {
   // Check if user is already a team member
   const isTeamMember = project.team?.includes(user?.uid) || false
   const isProjectOwner = project.creatorId === user?.uid || false
+
+  const handleShareProject = async () => {
+    const shareData = {
+      title: project.name,
+      text: `Check out this project: ${project.description}`,
+      url: window.location.href
+    }
+    
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        setShareSuccess(true)
+        setTimeout(() => setShareSuccess(false), 3000)
+      }
+    } catch (error) {
+      console.error('Error sharing:', error)
+    }
+  }
 
   // Role-specific action button mapping
   const getRoleActionButton = (role) => {
@@ -127,18 +153,29 @@ const ProjectView = () => {
                 <p className="text-gray-400 text-lg max-w-3xl">{project.description}</p>
               </div>
               
-              {isTeamMember ? (
-                <div className="px-6 py-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 font-semibold rounded-lg">
-                  Team Member ✓
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setShowJoinModal(true)}
-                  className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
-                >
-                  Join Project
-                </button>
-              )}
+              <div className="flex gap-3">
+                {isProjectOwner && (
+                  <button 
+                    onClick={() => setShowSettingsModal(true)}
+                    className="px-6 py-3 bg-dark-lighter border border-gray-800 text-white font-semibold rounded-lg hover:border-neon-blue/30 transition-all flex items-center gap-2"
+                  >
+                    <Settings size={18} />
+                    Settings
+                  </button>
+                )}
+                {isTeamMember ? (
+                  <div className="px-6 py-3 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 font-semibold rounded-lg">
+                    Team Member ✓
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowJoinModal(true)}
+                    className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+                  >
+                    Join Project
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -385,13 +422,27 @@ const ProjectView = () => {
               <div className="glass-effect rounded-xl p-6 border border-gray-800">
                 <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full px-4 py-3 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-all font-semibold text-sm">
-                    Request to Join
+                  {!isTeamMember && (
+                    <button 
+                      onClick={() => setShowJoinModal(true)}
+                      className="w-full px-4 py-3 bg-neon-green/10 text-neon-green border border-neon-green/30 rounded-lg hover:bg-neon-green/20 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+                    >
+                      <Users size={16} />
+                      Request to Join
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleShareProject}
+                    className="w-full px-4 py-3 bg-dark-lighter border border-gray-800 text-white rounded-lg hover:border-gray-700 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+                  >
+                    <Share2 size={16} />
+                    {shareSuccess ? 'Link Copied!' : 'Share Project'}
                   </button>
-                  <button className="w-full px-4 py-3 bg-dark-lighter border border-gray-800 text-white rounded-lg hover:border-gray-700 transition-all font-semibold text-sm">
-                    Share Project
-                  </button>
-                  <button className="w-full px-4 py-3 bg-dark-lighter border border-gray-800 text-white rounded-lg hover:border-gray-700 transition-all font-semibold text-sm">
+                  <button 
+                    onClick={() => setShowReportModal(true)}
+                    className="w-full px-4 py-3 bg-dark-lighter border border-gray-800 text-white rounded-lg hover:border-red-500/30 hover:text-red-400 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+                  >
+                    <Flag size={16} />
                     Report Issue
                   </button>
                 </div>
@@ -438,6 +489,157 @@ const ProjectView = () => {
         onClose={() => setShowJoinModal(false)}
         project={project}
       />
+
+      {/* Report Issue Modal */}
+      {showReportModal && (
+        <ReportIssueModal 
+          projectId={id}
+          projectName={project.name}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+
+      {/* Project Settings Modal */}
+      {showSettingsModal && isProjectOwner && (
+        <ProjectSettingsModal 
+          project={project}
+          onClose={() => setShowSettingsModal(false)}
+          onUpdate={(updatedProject) => {
+            // In production, this would update the project state
+            window.location.reload()
+          }}
+          onDelete={() => {
+            // Navigate back to marketplace after deletion
+            navigate('/marketplace')
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Report Issue Modal Component
+const ReportIssueModal = ({ projectId, projectName, onClose }) => {
+  const { user } = useAuth()
+  const [formData, setFormData] = useState({
+    issueType: 'inappropriate',
+    description: ''
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  const issueTypes = [
+    { value: 'inappropriate', label: 'Inappropriate Content' },
+    { value: 'spam', label: 'Spam or Scam' },
+    { value: 'copyright', label: 'Copyright Violation' },
+    { value: 'fake', label: 'Fake or Misleading' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSubmitting(true)
+
+    try {
+      // Save report to Firestore
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const { db } = await import('../config/firebase')
+      
+      await addDoc(collection(db, 'projectReports'), {
+        projectId,
+        projectName,
+        reportedBy: user.uid,
+        reporterEmail: user.email,
+        issueType: formData.issueType,
+        description: formData.description,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      })
+
+      setSuccess(true)
+      setTimeout(() => {
+        onClose()
+      }, 2000)
+    } catch (error) {
+      console.error('Error submitting report:', error)
+      alert('Failed to submit report. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="glass-effect rounded-xl p-6 border border-gray-800 max-w-md w-full">
+        {success ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-neon-green/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="text-neon-green" size={32} />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Report Submitted</h3>
+            <p className="text-gray-400">Thank you for helping keep SkillSync safe.</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold">Report Issue</h3>
+                <p className="text-sm text-gray-500 mt-1">Report: {projectName}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-white transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Issue Type</label>
+                <select
+                  value={formData.issueType}
+                  onChange={(e) => setFormData({ ...formData, issueType: e.target.value })}
+                  className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none"
+                  required
+                >
+                  {issueTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Please provide details about the issue..."
+                  className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none resize-none h-32"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3 bg-dark-lighter border border-gray-800 text-white rounded-lg hover:border-gray-700 transition-all font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-all font-semibold disabled:opacity-50"
+                >
+                  {submitting ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </div>
     </div>
   )
 }

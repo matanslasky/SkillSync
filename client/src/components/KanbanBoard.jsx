@@ -12,6 +12,8 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, GripVertical, Clock, AlertCircle, CheckCircle2, Eye, Trash2 } from 'lucide-react'
 import { getTasksByStatus, moveTask, createTask, deleteTask, TASK_STATUS, TASK_PRIORITY } from '../services/taskService'
+import { getProjectById } from '../services/firestoreService'
+import { mockUsers } from '../data/mockData'
 import { useAuth } from '../contexts/AuthContext'
 
 const KanbanBoard = ({ projectId }) => {
@@ -320,9 +322,29 @@ const CreateTaskModal = ({ projectId, initialStatus, onClose, onTaskCreated }) =
     title: '',
     description: '',
     priority: TASK_PRIORITY.MEDIUM,
-    deadline: ''
+    deadline: '',
+    assigneeId: user.uid,
+    assigneeName: user.name
   })
   const [creating, setCreating] = useState(false)
+  const [teamMembers, setTeamMembers] = useState([])
+
+  useEffect(() => {
+    // Load team members for assignment
+    const loadTeamMembers = async () => {
+      try {
+        const project = await getProjectById(projectId)
+        // For now, use mock users. In production, fetch real team members
+        const members = mockUsers.filter(u => project.team?.includes(u.id))
+        setTeamMembers(members)
+      } catch (error) {
+        console.error('Error loading team members:', error)
+        setTeamMembers(mockUsers.slice(0, 5)) // Fallback to mock data
+      }
+    }
+    
+    loadTeamMembers()
+  }, [projectId])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -336,8 +358,8 @@ const CreateTaskModal = ({ projectId, initialStatus, onClose, onTaskCreated }) =
         priority: formData.priority,
         deadline: formData.deadline ? new Date(formData.deadline) : null,
         status: initialStatus,
-        assigneeId: user.uid,
-        assigneeName: user.name,
+        assigneeId: formData.assigneeId,
+        assigneeName: formData.assigneeName,
         createdBy: user.uid
       })
 
@@ -402,6 +424,29 @@ const CreateTaskModal = ({ projectId, initialStatus, onClose, onTaskCreated }) =
                 className="w-full px-4 py-2 bg-dark-lighter border border-gray-800 rounded-lg focus:outline-none focus:border-neon-blue/50"
               />
             </div>
+          </div>
+
+          {/* Assign to Team Member */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Assign To</label>
+            <select
+              value={formData.assigneeId}
+              onChange={(e) => {
+                const selectedMember = teamMembers.find(m => m.id === e.target.value || m.uid === e.target.value)
+                setFormData({ 
+                  ...formData, 
+                  assigneeId: e.target.value,
+                  assigneeName: selectedMember?.name || 'Unknown'
+                })
+              }}
+              className="w-full px-4 py-2 bg-dark-lighter border border-gray-800 rounded-lg focus:outline-none focus:border-neon-blue/50"
+            >
+              {teamMembers.map(member => (
+                <option key={member.id || member.uid} value={member.id || member.uid}>
+                  {member.name} - {member.role}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-3 pt-2">

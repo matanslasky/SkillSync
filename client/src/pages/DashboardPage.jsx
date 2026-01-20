@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
-// NotificationBell temporarily disabled due to missing Firestore indexes
-// import NotificationBell from '../components/NotificationBell'
+import NotificationBell from '../components/NotificationBell'
 import ProgressBar from '../components/ProgressBar'
 import CommitmentGauge from '../components/CommitmentGauge'
 import CommitmentScoreGauge from '../components/CommitmentScoreGauge'

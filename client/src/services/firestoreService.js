@@ -137,3 +137,41 @@ export const searchUsersBySkills = async (skills) => {
   const snapshot = await getDocs(q)
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
+
+// Find projects matching user's skills
+export const findProjectsForUser = async (userSkills) => {
+  if (!userSkills || userSkills.length === 0) {
+    return []
+  }
+  
+  try {
+    // Get all active projects
+    const allProjects = await getProjects()
+    
+    // Score each project based on skill matches
+    const scoredProjects = allProjects.map(project => {
+      let matchScore = 0
+      const projectSkills = project.rolesNeeded || []
+      
+      // Check if user skills match any required roles
+      projectSkills.forEach(role => {
+        userSkills.forEach(skill => {
+          if (role.toLowerCase().includes(skill.toLowerCase()) || 
+              skill.toLowerCase().includes(role.toLowerCase())) {
+            matchScore++
+          }
+        })
+      })
+      
+      return { ...project, matchScore }
+    })
+    
+    // Return projects with at least one skill match, sorted by match score
+    return scoredProjects
+      .filter(p => p.matchScore > 0)
+      .sort((a, b) => b.matchScore - a.matchScore)
+  } catch (error) {
+    console.error('Error finding projects for user:', error)
+    return []
+  }
+}

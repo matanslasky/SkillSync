@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
-// NotificationBell temporarily disabled due to missing Firestore indexes
-// import NotificationBell from '../components/NotificationBell'
-import { Search, Plus, Users, Calendar, TrendingUp } from 'lucide-react'
+import NotificationBell from '../components/NotificationBell'
+import { Search, Plus, Users, Calendar, TrendingUp, Sparkles } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
 import { getProjects, searchProjects } from '../services/projectService'
+import { findProjectsForUser } from '../services/firestoreService'
 import { useAuth } from '../contexts/AuthContext'
 
 const Marketplace = () => {
@@ -14,6 +14,7 @@ const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [projects, setProjects] = useState([])
+  const [recommendedProjects, setRecommendedProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [useMockData, setUseMockData] = useState(false)
 
@@ -35,6 +36,12 @@ const Marketplace = () => {
           setProjects(fetchedProjects)
           setUseMockData(false)
         }
+        
+        // Load skill-based recommendations
+        if (user?.skills && user.skills.length > 0) {
+          const recommended = await findProjectsForUser(user.skills)
+          setRecommendedProjects(recommended.slice(0, 3)) // Top 3 matches
+        }
       } catch (error) {
         console.error('Error loading projects:', error)
         // Fallback to mock data on error
@@ -46,7 +53,7 @@ const Marketplace = () => {
     }
     
     loadProjects()
-  }, [selectedCategory])
+  }, [selectedCategory, user])
 
   // Search handler with debounce
   useEffect(() => {
@@ -127,6 +134,27 @@ const Marketplace = () => {
           </div>
         </div>
 
+        {/* Recommended Projects Section */}
+        {recommendedProjects.length > 0 && !searchTerm && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="text-neon-green" size={24} />
+              <h3 className="text-xl font-bold">Recommended for You</h3>
+              <span className="text-xs text-gray-500 ml-2">Based on your skills</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {recommendedProjects.map(project => (
+                <ProjectCard key={project.id} project={project} isRecommended={true} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Projects Section */}
+        <div className="mb-4">
+          <h3 className="text-xl font-bold">{searchTerm ? 'Search Results' : 'All Projects'}</h3>
+        </div>
+
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
@@ -170,16 +198,28 @@ const Marketplace = () => {
   )
 }
 
-const ProjectCard = ({ project }) => {
+const ProjectCard = ({ project, isRecommended = false }) => {
   const daysRemaining = calculateDaysRemaining(project.deadline)
   
   return (
-    <div className="glass-effect rounded-xl p-6 border border-gray-800 hover:border-neon-green/30 transition-all cursor-pointer flex flex-col h-full">
+    <div className={`glass-effect rounded-xl p-6 border transition-all cursor-pointer flex flex-col h-full ${
+      isRecommended 
+        ? 'border-neon-green/50 bg-neon-green/5 hover:border-neon-green' 
+        : 'border-gray-800 hover:border-neon-green/30'
+    }`}>
       <div className="flex items-start justify-between mb-4">
         <h3 className="text-lg font-bold text-white flex-1">{project.name}</h3>
-        <span className="px-3 py-1 bg-neon-blue/20 text-neon-blue text-xs font-semibold rounded-full border border-neon-blue/30 flex items-center justify-center">
-          {project.category}
-        </span>
+        <div className="flex flex-col gap-2 items-end">
+          <span className="px-3 py-1 bg-neon-blue/20 text-neon-blue text-xs font-semibold rounded-full border border-neon-blue/30 flex items-center justify-center">
+            {project.category}
+          </span>
+          {isRecommended && (
+            <span className="px-2 py-1 bg-neon-green/20 text-neon-green text-xs font-semibold rounded-full border border-neon-green/30 flex items-center gap-1">
+              <Sparkles size={12} />
+              Match
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-gray-400 mb-4 line-clamp-2">{project.description}</p>

@@ -2,18 +2,104 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
-    match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 2, 18);
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection - users can read all, but only write their own
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(userId);
+    }
+    
+    // Projects collection - authenticated users can read all, creators can write
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.creatorId == request.auth.uid || 
+         request.auth.uid in resource.data.team);
+    }
+    
+    // Tasks collection - team members can read/write project tasks
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.createdBy == request.auth.uid || 
+         resource.data.assignedTo == request.auth.uid);
+    }
+    
+    // Conversations - participants can read/write
+    match /conversations/{conversationId} {
+      allow read, write: if isAuthenticated() && 
+        request.auth.uid in resource.data.participants;
+      
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
+    }
+    
+    // Join requests - users can read their own and project owners can read project requests
+    match /joinRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.userId == request.auth.uid || 
+         resource.data.projectOwnerId == request.auth.uid);
+    }
+    
+    // Team invitations - sender and recipient can read/write
+    match /teamInvitations/{inviteId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.senderId == request.auth.uid || 
+         resource.data.recipientId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (resource.data.senderId == request.auth.uid || 
+         resource.data.recipientId == request.auth.uid);
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+    
+    // Notifications - users can only read/write their own
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+    }
+    
+    // Score history - users can read all but only write their own
+    match /scoreHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Peer reviews - users can read reviews about them, and create reviews
+    match /peerReviews/{reviewId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.reviewedUserId == request.auth.uid || 
+         resource.data.reviewerId == request.auth.uid);
+      allow create: if isAuthenticated();
+    }
+    
+    // Settings - users can only read/write their own
+    match /settings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // Milestones - team members can read/write project milestones
+    match /milestones/{milestoneId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
     }
   }
 }
