@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
@@ -8,8 +8,20 @@ const Login = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+
+  // Load remembered credentials on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail')
+    const rememberedPassword = localStorage.getItem('rememberedPassword')
+    
+    if (rememberedEmail && rememberedPassword) {
+      setFormData({ email: rememberedEmail, password: rememberedPassword })
+      setRememberMe(true)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,6 +30,15 @@ const Login = () => {
 
     try {
       const result = await login(formData.email, formData.password)
+      
+      // Handle Remember Me
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email)
+        localStorage.setItem('rememberedPassword', formData.password)
+      } else {
+        localStorage.removeItem('rememberedEmail')
+        localStorage.removeItem('rememberedPassword')
+      }
       
       // Store admin session if admin login
       if (result.user?.isAdmin) {
@@ -100,6 +121,20 @@ const Login = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+            </div>
+
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-800 bg-dark-lighter text-neon-green focus:ring-neon-green focus:ring-2"
+              />
+              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-400 cursor-pointer">
+                Remember me on this device
+              </label>
             </div>
 
             {/* Submit Button */}
