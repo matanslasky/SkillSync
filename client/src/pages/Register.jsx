@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Mail, Lock, User, Briefcase } from 'lucide-react'
 import { ROLE_LIST } from '../constants/roles'
+import ProfileCompletionWizard from '../components/ProfileCompletionWizard'
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const Register = () => {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showWizard, setShowWizard] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -24,7 +26,7 @@ const Register = () => {
 
     try {
       await register(formData)
-      navigate('/dashboard')
+      setShowWizard(true) // Show wizard after successful registration
     } catch (err) {
       console.error('Registration error:', err)
       
@@ -170,6 +172,20 @@ const Register = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Completion Wizard */}
+      {showWizard && (
+        <ProfileCompletionWizard
+          onComplete={() => {
+            setShowWizard(false)
+            navigate('/dashboard')
+          }}
+          onSkip={() => {
+            setShowWizard(false)
+            navigate('/dashboard')
+          }}
+        />
+      )}
     </div>
   )
 }

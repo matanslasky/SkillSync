@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import NotificationBell from '../components/NotificationBell'
-import { Search, Plus, Users, Calendar, TrendingUp, Sparkles } from 'lucide-react'
+import { Search, Plus, Users, Calendar, TrendingUp, Sparkles, SlidersHorizontal } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
 import { getProjects, searchProjects } from '../services/projectService'
 import { findProjectsForUser } from '../services/firestoreService'
+import { ProjectCardSkeleton, EmptyProjects, EmptySearch } from '../components/LoadingSkeletons'
 import { useAuth } from '../contexts/AuthContext'
 
 const Marketplace = () => {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [sortBy, setSortBy] = useState('recent') // recent, trending, deadline, name
+  const [showFilters, setShowFilters] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [projects, setProjects] = useState([])
   const [recommendedProjects, setRecommendedProjects] = useState([])
@@ -85,6 +88,22 @@ const Marketplace = () => {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, selectedCategory, useMockData])
 
+  // Sort projects
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      case 'trending':
+        return (b.team?.length || 0) - (a.team?.length || 0)
+      case 'deadline':
+        return new Date(a.deadline) - new Date(b.deadline)
+      case 'name':
+        return a.name.localeCompare(b.name)
+      default:
+        return 0
+    }
+  })
+
   const filteredProjects = projects
 
   return (
@@ -111,7 +130,7 @@ const Marketplace = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             <div className="relative flex-1">
               <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
@@ -131,7 +150,37 @@ const Marketplace = () => {
                 <option key={cat} value={cat.toLowerCase()}>{cat}</option>
               ))}
             </select>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-3 border rounded-lg transition-all flex items-center gap-2 ${
+                showFilters 
+                  ? 'bg-neon-blue/20 border-neon-blue text-neon-blue' 
+                  : 'bg-dark-lighter border-gray-800 text-gray-400 hover:border-gray-700'
+              }`}
+            >
+              <SlidersHorizontal size={18} />
+              Filters
+            </button>
           </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="glass-effect rounded-xl p-4 border border-gray-800 mb-4">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-400">Sort by:</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-dark-lighter border border-gray-800 rounded-lg px-4 py-2 text-white focus:border-neon-green focus:outline-none"
+                >
+                  <option value="recent">Recently Created</option>
+                  <option value="trending">Most Popular</option>
+                  <option value="deadline">Deadline (Soonest)</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recommended Projects Section */}
@@ -160,26 +209,21 @@ const Marketplace = () => {
           {loading ? (
             // Loading skeleton
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse">
-                <div className="h-6 bg-gray-800 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-gray-800 rounded w-full mb-2"></div>
-                <div className="h-4 bg-gray-800 rounded w-5/6"></div>
-              </div>
+              <ProjectCardSkeleton key={i} />
             ))
           ) : (
-            filteredProjects.map(project => (
+            sortedProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))
           )}
         </div>
 
-        {!loading && filteredProjects.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No projects found. Try adjusting your search.</p>
-            {useMockData && (
-              <p className="text-gray-600 text-sm mt-2">Showing sample data - create your first project!</p>
-            )}
-          </div>
+        {!loading && sortedProjects.length === 0 && (
+          searchTerm ? (
+            <EmptySearch searchTerm={searchTerm} />
+          ) : (
+            <EmptyProjects onCreateProject={() => setShowCreateModal(true)} />
+          )
         )}
 
         {/* Create Project Modal */}
