@@ -175,3 +175,46 @@ export const findProjectsForUser = async (userSkills) => {
     return []
   }
 }
+
+// Notifications
+export const createNotification = async (notificationData) => {
+  try {
+    const docRef = await addDoc(collection(db, 'notifications'), {
+      ...notificationData,
+      read: false,
+      createdAt: serverTimestamp()
+    })
+    
+    const newDoc = await getDoc(docRef)
+    return { id: newDoc.id, ...newDoc.data() }
+  } catch (error) {
+    console.error('Error creating notification:', error)
+    throw error
+  }
+}
+
+export const getUserNotifications = async (userId) => {
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    )
+    
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  } catch (error) {
+    console.error('Error getting notifications:', error)
+    return []
+  }
+}
+
+export const markNotificationRead = async (notificationId) => {
+  try {
+    const docRef = doc(db, 'notifications', notificationId)
+    await updateDoc(docRef, { read: true })
+  } catch (error) {
+    console.error('Error marking notification read:', error)
+    throw error
+  }
+}

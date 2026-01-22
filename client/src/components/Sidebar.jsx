@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import ThemeToggle from './ThemeToggle'
 
 const Sidebar = () => {
   const { logout, user } = useAuth()
@@ -68,8 +69,11 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-gray-800">
+      {/* Theme Toggle & Logout */}
+      <div className="p-4 border-t border-gray-800 space-y-2">
+        <div className="flex justify-center mb-2">
+          <ThemeToggle />
+        </div>
         <button
           onClick={logout}
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-lighter hover:text-neon-pink transition-all duration-200 w-full"

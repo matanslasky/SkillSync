@@ -154,7 +154,7 @@ const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
               <p className="text-gray-400">This helps us match you with relevant projects</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {roles.map(role => (
                 <button
                   key={role}
@@ -286,19 +286,19 @@ const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="glass-effect rounded-xl p-8 max-w-2xl w-full border border-gray-800">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="glass-effect rounded-xl p-4 sm:p-8 max-w-2xl w-full border border-gray-800 my-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold">Complete Your Profile</h2>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <div className="flex-1 min-w-[200px]">
+            <h2 className="text-xl sm:text-2xl font-bold">Complete Your Profile</h2>
             <p className="text-sm text-gray-500 mt-1">
               Step {currentStep} of {totalSteps}
             </p>
           </div>
           <button
             onClick={onSkip}
-            className="text-gray-500 hover:text-white transition-all"
+            className="text-gray-500 hover:text-white transition-all text-sm sm:text-base"
           >
             Skip for now
           </button>

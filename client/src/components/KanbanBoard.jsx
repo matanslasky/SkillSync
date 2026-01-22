@@ -12,7 +12,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, GripVertical, Clock, AlertCircle, CheckCircle2, Eye, Trash2 } from 'lucide-react'
 import { getTasksByStatus, moveTask, createTask, deleteTask, TASK_STATUS, TASK_PRIORITY } from '../services/taskService'
-import { getProjectById } from '../services/firestoreService'
+import { getProjectById, createNotification } from '../services/firestoreService'
 import { mockUsers } from '../data/mockData'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -146,7 +146,7 @@ const KanbanBoard = ({ projectId }) => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 kanban-grid">
           {columns.map((column) => (
             <KanbanColumn
               key={column.id}
@@ -351,7 +351,7 @@ const CreateTaskModal = ({ projectId, initialStatus, onClose, onTaskCreated }) =
     setCreating(true)
 
     try {
-      await createTask({
+      const newTask = await createTask({
         projectId,
         title: formData.title,
         description: formData.description,
@@ -362,6 +362,22 @@ const CreateTaskModal = ({ projectId, initialStatus, onClose, onTaskCreated }) =
         assigneeName: formData.assigneeName,
         createdBy: user.uid
       })
+
+      // Create notification for assignee if not self-assigned
+      if (formData.assigneeId !== user.uid) {
+        await createNotification({
+          userId: formData.assigneeId,
+          type: 'task_assigned',
+          title: 'New Task Assigned',
+          message: `You've been assigned: ${formData.title}`,
+          link: `/project/${projectId}`,
+          metadata: {
+            taskId: newTask.id,
+            projectId,
+            assignedBy: user.name
+          }
+        })
+      }
 
       onTaskCreated()
       onClose()
