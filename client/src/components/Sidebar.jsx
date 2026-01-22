@@ -9,12 +9,13 @@ import {
   Info,
   Shield
 } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ThemeToggle from './ThemeToggle'
 
 const Sidebar = () => {
   const { logout, user } = useAuth()
+  const navigate = useNavigate()
 
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -36,7 +37,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 h-screen bg-dark-light border-r border-gray-800 flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-800">
+      <div className="p-6 border-b border-gray-800 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/dashboard')}>
         <h1 className="text-2xl font-bold neon-text-green">
           Skill<span className="text-neon-blue">Sync</span>
         </h1>

@@ -1,7 +1,10 @@
 import Sidebar from '../components/Sidebar'
 import { Users, Target, Zap, Shield, Rocket, Heart, Award, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const About = () => {
+  const navigate = useNavigate()
+  
   return (
     <div className="flex h-screen bg-dark">
       <Sidebar />
@@ -147,7 +150,10 @@ const About = () => {
           <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
             Join thousands of students who are turning their ideas into reality. Start your next project today.
           </p>
-          <button className="px-8 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all">
+          <button 
+            onClick={() => navigate('/register')}
+            className="px-8 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
+          >
             Get Started
           </button>
         </div>

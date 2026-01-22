@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import NotificationBell from '../components/NotificationBell'
 import { Search, Plus, Users, Calendar, TrendingUp, Sparkles, SlidersHorizontal } from 'lucide-react'
@@ -6,11 +7,13 @@ import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
 import { getProjects, searchProjects } from '../services/projectService'
 import { findProjectsForUser } from '../services/firestoreService'
-import { ProjectCardSkeleton, EmptyProjects, EmptySearch } from '../components/LoadingSkeletons'
+import { ProjectCardSkeleton } from '../components/LoadingSkeletons'
+import { EmptyProjects, EmptySearch } from '../components/EmptyStates'
 import { useAuth } from '../contexts/AuthContext'
 
 const Marketplace = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('recent') // recent, trending, deadline, name
@@ -243,6 +246,7 @@ const Marketplace = () => {
 }
 
 const ProjectCard = ({ project, isRecommended = false }) => {
+  const navigate = useNavigate()
   const daysRemaining = calculateDaysRemaining(project.deadline)
   
   return (
@@ -283,7 +287,10 @@ const ProjectCard = ({ project, isRecommended = false }) => {
         </div>
       </div>
 
-      <button className="w-full mt-4 bg-dark-lighter border border-neon-green/30 text-neon-green font-semibold py-2 rounded-lg hover:bg-neon-green/10 transition-all">
+      <button 
+        onClick={() => navigate(`/project/${project.id}`)}
+        className="w-full mt-4 bg-dark-lighter border border-neon-green/30 text-neon-green font-semibold py-2 rounded-lg hover:bg-neon-green/10 transition-all"
+      >
         View Details
       </button>
     </div>

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { useAuth } from '../contexts/AuthContext'
 import { Mail, Linkedin, Github, MapPin, Calendar, Award, Code, Briefcase, Star } from 'lucide-react'
@@ -7,6 +7,7 @@ import { mockUsers } from '../data/mockData'
 const Profile = () => {
   const { id } = useParams()
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
   
   // For now, use mock data. In production, fetch from Firestore
   const profileUser = mockUsers.find(u => u.id === id) || currentUser || {
@@ -57,7 +58,10 @@ const Profile = () => {
                     <p className="text-xl text-neon-blue">{profileUser.role}</p>
                   </div>
                   {isOwnProfile && (
-                    <button className="px-4 py-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-gray-700 transition-all font-medium">
+                    <button 
+                      onClick={() => navigate('/settings')}
+                      className="px-4 py-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-gray-700 transition-all font-medium"
+                    >
                       Edit Profile
                     </button>
                   )}
@@ -89,12 +93,22 @@ const Profile = () => {
 
                 {/* Social Links */}
                 <div className="flex gap-3 mt-4">
-                  <button className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all">
-                    <Github size={18} className="text-gray-400" />
-                  </button>
-                  <button className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all">
-                    <Linkedin size={18} className="text-gray-400" />
-                  </button>
+                  {profileUser.github && (
+                    <button 
+                      onClick={() => window.open(`https://github.com/${profileUser.github}`, '_blank')}
+                      className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all"
+                    >
+                      <Github size={18} className="text-gray-400" />
+                    </button>
+                  )}
+                  {profileUser.linkedin && (
+                    <button 
+                      onClick={() => window.open(`https://linkedin.com/in/${profileUser.linkedin}`, '_blank')}
+                      className="p-2 bg-dark-lighter border border-gray-800 rounded-lg hover:border-neon-blue/30 transition-all"
+                    >
+                      <Linkedin size={18} className="text-gray-400" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
