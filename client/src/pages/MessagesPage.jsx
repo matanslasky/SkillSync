@@ -24,6 +24,7 @@ const MessagesPage = () => {
   const [conversationUsers, setConversationUsers] = useState({})
   const [loading, setLoading] = useState(true)
   const [showNewChatModal, setShowNewChatModal] = useState(false)
+  const [modalSearchTerm, setModalSearchTerm] = useState('')
   const messagesEndRef = useRef(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -118,6 +119,12 @@ const MessagesPage = () => {
 
   // Available team members to start new conversations
   const availableUsers = mockUsers.filter(u => u.id !== user?.uid)
+
+  // Filtered users for modal
+  const filteredModalUsers = availableUsers.filter(u =>
+    u.name?.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+    u.role?.toLowerCase().includes(modalSearchTerm.toLowerCase())
+  )
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -385,8 +392,8 @@ const MessagesPage = () => {
                 <input
                   type="text"
                   placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={modalSearchTerm}
+                  onChange={(e) => setModalSearchTerm(e.target.value)}
                   className="w-full bg-dark border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-neon-green focus:outline-none transition-all"
                 />
               </div>
@@ -394,15 +401,15 @@ const MessagesPage = () => {
 
             {/* Available Users List */}
             <div className="flex-1 overflow-y-auto p-4">
-              {availableUsers.length > 0 ? (
+              {filteredModalUsers.length > 0 ? (
                 <div className="space-y-2">
-                  {availableUsers.map(availableUser => (
+                  {filteredModalUsers.map(availableUser => (
                     <button
                       key={availableUser.id}
                       onClick={() => {
                         handleStartConversation(availableUser)
                         setShowNewChatModal(false)
-                        setSearchTerm('')
+                        setModalSearchTerm('')
                       }}
                       className="w-full p-3 flex items-center gap-3 bg-dark hover:bg-dark-lighter rounded-lg transition-all border border-gray-800 hover:border-neon-green/30"
                     >
