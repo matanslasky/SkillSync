@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
-import { Search, Send, Paperclip, Smile, MoreVertical, Phone, Video } from 'lucide-react'
+import { Search, Send, Paperclip, Smile, MoreVertical, Phone, Video, Plus, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { 
   subscribeToConversations, 
@@ -23,6 +23,7 @@ const MessagesPage = () => {
   const [messages, setMessages] = useState([])
   const [conversationUsers, setConversationUsers] = useState({})
   const [loading, setLoading] = useState(true)
+  const [showNewChatModal, setShowNewChatModal] = useState(false)
   const messagesEndRef = useRef(null)
 
   // Auto-scroll to bottom when new messages arrive
@@ -168,7 +169,16 @@ const MessagesPage = () => {
         <div className="w-80 border-r border-gray-800 flex flex-col">
           {/* Header */}
           <div className="p-4 border-b border-gray-800">
-            <h2 className="text-xl font-bold mb-4">Messages</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Messages</h2>
+              <button
+                onClick={() => setShowNewChatModal(true)}
+                className="p-2 bg-neon-green/10 text-neon-green rounded-lg hover:bg-neon-green/20 transition-all"
+                title="New conversation"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
             <div className="relative">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
@@ -352,6 +362,69 @@ const MessagesPage = () => {
           )}
         </div>
       </main>
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-light rounded-xl border border-gray-800 w-full max-w-md max-h-[80vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+              <h3 className="text-lg font-bold">New Conversation</h3>
+              <button
+                onClick={() => setShowNewChatModal(false)}
+                className="p-2 hover:bg-dark-lighter rounded-lg transition-all"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="p-4 border-b border-gray-800">
+              <div className="relative">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-dark border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-neon-green focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Available Users List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {availableUsers.length > 0 ? (
+                <div className="space-y-2">
+                  {availableUsers.map(availableUser => (
+                    <button
+                      key={availableUser.id}
+                      onClick={() => {
+                        handleStartConversation(availableUser)
+                        setShowNewChatModal(false)
+                        setSearchTerm('')
+                      }}
+                      className="w-full p-3 flex items-center gap-3 bg-dark hover:bg-dark-lighter rounded-lg transition-all border border-gray-800 hover:border-neon-green/30"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-neon-blue to-neon-green flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        {availableUser.name?.charAt(0) || '?'}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium text-white">{availableUser.name}</p>
+                        <p className="text-xs text-gray-500">{availableUser.role}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-sm">No users found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

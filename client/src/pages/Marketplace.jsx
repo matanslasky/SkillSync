@@ -91,6 +91,8 @@ const Marketplace = () => {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, selectedCategory, useMockData])
 
+  const filteredProjects = projects
+
   // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
@@ -106,8 +108,6 @@ const Marketplace = () => {
         return 0
     }
   })
-
-  const filteredProjects = projects
 
   return (
     <div className="flex h-screen bg-dark">
