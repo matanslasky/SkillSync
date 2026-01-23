@@ -77,6 +77,11 @@ export const updateSettingsSection = async (userId, section, data) => {
 // Update user profile in main users collection (for display purposes)
 export const updateUserProfile = async (userId, profileData) => {
   try {
+    const userRef = doc(db, 'users', userId)
+    
+    // Check if user document exists
+    const userDoc = await getDoc(userRef)
+    
     const updates = {
       updatedAt: new Date()
     }
@@ -89,7 +94,15 @@ export const updateUserProfile = async (userId, profileData) => {
     if (profileData.github) updates.githubUsername = profileData.github
     if (profileData.linkedin) updates.linkedinUrl = profileData.linkedin
     
-    await updateDoc(doc(db, 'users', userId), updates)
+    // Use setDoc with merge if document doesn't exist, updateDoc if it does
+    if (!userDoc.exists()) {
+      await setDoc(userRef, {
+        ...updates,
+        createdAt: new Date()
+      }, { merge: true })
+    } else {
+      await updateDoc(userRef, updates)
+    }
     
     // Also save to settings
     await updateSettingsSection(userId, 'profile', profileData)

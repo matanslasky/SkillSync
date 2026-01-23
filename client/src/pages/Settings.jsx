@@ -175,7 +175,8 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
       setSelectedImage(null)
     } catch (error) {
       console.error('Error updating profile:', error)
-      setSaveMessage('Failed to save changes')
+      setSaveMessage('Failed to save profile. Please try again.')
+      setTimeout(() => setSaveMessage(''), 5000)
     } finally {
       setSaving(false)
       setUploadingImage(false)
