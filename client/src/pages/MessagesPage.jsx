@@ -92,6 +92,8 @@ const MessagesPage = () => {
       conversationId,
       otherUser
     })
+    setShowNewChatModal(false)
+    setModalSearchTerm('')
   }
 
   // Auto-open chat if navigated from Team page with specific user
