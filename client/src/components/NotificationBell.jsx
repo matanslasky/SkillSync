@@ -20,19 +20,25 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!user?.uid) return
 
+    let unsubscribe = null
+
     // Subscribe to real-time notifications
     try {
-      const unsubscribe = subscribeToNotifications(user.uid, (newNotifications) => {
+      unsubscribe = subscribeToNotifications(user.uid, (newNotifications) => {
         setNotifications(newNotifications)
         const unread = newNotifications.filter(n => !n.read).length
         setUnreadCount(unread)
         setIndexError(false)
       })
-
-      return () => unsubscribe()
     } catch (error) {
       console.error('Failed to subscribe to notifications:', error)
       setIndexError(true)
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
     }
   }, [user?.uid])
 

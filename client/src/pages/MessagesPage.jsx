@@ -62,7 +62,7 @@ const MessagesPage = () => {
     })
 
     return () => unsubscribe()
-  }, [user])
+  }, [user?.uid])
 
   // Subscribe to messages in selected conversation
   useEffect(() => {
@@ -81,7 +81,7 @@ const MessagesPage = () => {
     })
 
     return () => unsubscribe()
-  }, [selectedChat, user])
+  }, [selectedChat?.conversationId, user?.uid])
 
   // Handle starting a new conversation with a team member
   const handleStartConversation = async (otherUser) => {

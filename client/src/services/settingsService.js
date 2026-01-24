@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import logger from '../utils/logger'
 
 // Get user settings from Firestore
 export const getUserSettings = async (userId) => {
@@ -39,7 +40,7 @@ export const getUserSettings = async (userId) => {
       }
     }
   } catch (error) {
-    console.error('Error fetching user settings:', error)
+    logger.error('Error fetching user settings', error, { userId })
     throw error
   }
 }
@@ -54,7 +55,7 @@ export const saveUserSettings = async (userId, settings) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error saving user settings:', error)
+    logger.error('Error saving user settings', error, { userId })
     throw error
   }
 }
@@ -69,7 +70,7 @@ export const updateSettingsSection = async (userId, section, data) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error updating settings section:', error)
+    logger.error('Error updating settings section', error, { userId, section })
     throw error
   }
 }
@@ -109,7 +110,7 @@ export const updateUserProfile = async (userId, profileData) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error updating user profile:', error)
+    logger.error('Error updating user profile', error, { userId })
     throw error
   }
 }

@@ -1,5 +1,14 @@
 // Loading Skeleton Components
 
+export const PageLoader = () => (
+  <div className="min-h-screen bg-dark flex items-center justify-center">
+    <div className="text-center">
+      <div className="inline-block w-16 h-16 border-4 border-neon-green border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p className="text-gray-400">Loading...</p>
+    </div>
+  </div>
+)
+
 export const CardSkeleton = () => (
   <div className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse">
     <div className="flex items-start justify-between mb-4">
@@ -142,4 +151,13 @@ export const LoadingSpinner = ({ size = 'md', className = '' }) => {
       <div className={`${sizeClasses[size]} border-4 border-gray-800 border-t-neon-green rounded-full animate-spin`}></div>
     </div>
   )
+}
+
+export default {
+  PageLoader,
+  CardSkeleton,
+  ProjectCardSkeleton,
+  TableRowSkeleton,
+  ProfileSkeleton,
+  LoadingSpinner
 }

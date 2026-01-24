@@ -12,6 +12,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import logger from '../utils/logger'
 
 // Projects Collection
 export const createProject = async (projectData) => {
@@ -171,7 +172,7 @@ export const findProjectsForUser = async (userSkills) => {
       .filter(p => p.matchScore > 0)
       .sort((a, b) => b.matchScore - a.matchScore)
   } catch (error) {
-    console.error('Error finding projects for user:', error)
+    logger.error('Error finding projects for user', error, { userId })
     return []
   }
 }
@@ -188,7 +189,7 @@ export const createNotification = async (notificationData) => {
     const newDoc = await getDoc(docRef)
     return { id: newDoc.id, ...newDoc.data() }
   } catch (error) {
-    console.error('Error creating notification:', error)
+    logger.error('Error creating notification', error, notificationData)
     throw error
   }
 }
@@ -204,7 +205,7 @@ export const getUserNotifications = async (userId) => {
     const snapshot = await getDocs(q)
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
   } catch (error) {
-    console.error('Error getting notifications:', error)
+    logger.error('Error getting notifications', error, { userId })
     return []
   }
 }
@@ -214,7 +215,7 @@ export const markNotificationRead = async (notificationId) => {
     const docRef = doc(db, 'notifications', notificationId)
     await updateDoc(docRef, { read: true })
   } catch (error) {
-    console.error('Error marking notification read:', error)
+    logger.error('Error marking notification read', error, { notificationId })
     throw error
   }
 }

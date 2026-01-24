@@ -13,20 +13,54 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Users collection - users can read all, but only write their own
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isOwner(userId);
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
     
-    // Projects collection - authenticated users can read all, creators can write
+    // Helper function to validate user data
+    function isValidUserData() {
+      return request.resource.data.keys().hasAll(['uid', 'email', 'name', 'role']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 2 &&
+        request.resource.data.name.size() <= 50 &&
+        request.resource.data.email is string &&
+        request.resource.data.email.matches('.*@.*\\..*') &&
+        request.resource.data.role in ['Developer', 'Designer', 'Product Manager', 'Marketing', 'Data Scientist', 'Business Analyst', 'Admin', 'Other'];
+    }
+    
+    // Helper function to validate project data
+    function isValidProjectData() {
+      return request.resource.data.keys().hasAll(['name', 'description', 'creatorId']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 3 &&
+        request.resource.data.name.size() <= 100 &&
+        request.resource.data.description is string &&
+        request.resource.data.description.size() >= 20 &&
+        request.resource.data.description.size() <= 1000;
+    }
+    
+    // Users collection - users can read all, but only write their own (with validation)
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId && isValidUserData();
+      allow update: if isOwner(userId) && isValidUserData();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Projects collection - authenticated users can read all, creators can write (with validation)
     match /projects/{projectId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && 
+      allow create: if isAuthenticated() && 
+        request.resource.data.creatorId == request.auth.uid &&
+        isValidProjectData();
+      allow update: if isAuthenticated() && 
         (resource.data.creatorId == request.auth.uid || 
-         request.auth.uid in resource.data.team);
+         request.auth.uid in resource.data.team) &&
+        isValidProjectData();
+      allow delete: if isAuthenticated() && 
+        (resource.data.creatorId == request.auth.uid || isAdmin());
     }
     
     // Tasks collection - team members can read/write project tasks
@@ -70,10 +104,11 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
     }
     
-    // Notifications - users can only read/write their own
+    // Notifications - users can only read/write their own (fixed recipientId check)
     match /notifications/{notificationId} {
-      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
       allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
     }
     
     // Score history - users can read all but only write their own

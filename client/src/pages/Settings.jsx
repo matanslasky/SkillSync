@@ -5,6 +5,8 @@ import { User, Mail, Lock, Bell, Palette, Shield, Github, Linkedin } from 'lucid
 import { ROLE_LIST } from '../constants/roles'
 import { getUserSettings, saveUserSettings } from '../services/settingsService'
 import ImageUpload from '../components/ImageUpload'
+import { profileUpdateSchema } from '../utils/validation'
+import logger from '../utils/logger'
 
 const Settings = () => {
   const { user } = useAuth()
@@ -65,14 +67,14 @@ const Settings = () => {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Settings</h2>
+        <header className="mb-8">
+          <h2 id="settings-heading" className="text-3xl font-bold mb-2">Settings</h2>
           <p className="text-gray-500">Manage your account settings and preferences</p>
-        </div>
+        </header>
 
         <div className="flex gap-8">
           {/* Sidebar Tabs */}
-          <div className="w-64 space-y-2">
+          <nav aria-label="Settings navigation" className="w-64 space-y-2">
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -82,12 +84,14 @@ const Settings = () => {
                     ? 'bg-neon-green/10 text-neon-green border border-neon-green/30'
                     : 'text-gray-400 hover:bg-dark-lighter hover:text-white'
                 }`}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+                aria-label={`${tab.label} settings`}
               >
-                {tab.icon}
+                <span aria-hidden="true">{tab.icon}</span>
                 <span className="font-medium">{tab.label}</span>
               </button>
             ))}
-          </div>
+          </nav>
 
           {/* Content */}
           <div className="flex-1">
@@ -114,6 +118,7 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
   })
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
   const [selectedImage, setSelectedImage] = useState(null)
   const [uploadingImage, setUploadingImage] = useState(false)
 
@@ -137,6 +142,31 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
     e.preventDefault()
     setSaving(true)
     setSaveMessage('')
+    setFieldErrors({})
+    
+    // Validate form data
+    const profileData = {
+      name: formData.name,
+      bio: formData.bio,
+      skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+      github: formData.github,
+      linkedin: formData.linkedin,
+    }
+
+    try {
+      profileUpdateSchema.parse(profileData)
+    } catch (validationError) {
+      if (validationError.errors) {
+        const errors = {}
+        validationError.errors.forEach((err) => {
+          errors[err.path[0]] = err.message
+        })
+        setFieldErrors(errors)
+        logger.warn('Profile validation failed', { errors })
+      }
+      setSaving(false)
+      return
+    }
     
     try {
       // Upload image first if one was selected
@@ -154,27 +184,24 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
         setUploadingImage(false)
       }
       
-      const profileData = {
-        ...formData,
-        skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean)
-      }
-      
       const newSettings = {
         ...settings,
-        profile: { ...profileData, photoURL }
+        profile: { ...profileData, role: formData.role, photoURL }
       }
       
       await updateSettings(newSettings)
       
       // Also update the main user profile
       const { updateUserProfile } = await import('../services/settingsService')
-      await updateUserProfile(user.uid, profileData)
+      await updateUserProfile(user.uid, { ...profileData, role: formData.role })
       
+      logger.info('Profile updated successfully', { userId: user.uid })
+      logger.logUserAction('profile_updated', { role: formData.role })
       setSaveMessage('Profile updated successfully!')
       setTimeout(() => setSaveMessage(''), 3000)
       setSelectedImage(null)
     } catch (error) {
-      console.error('Error updating profile:', error)
+      logger.error('Error updating profile', error, { userId: user.uid })
       setSaveMessage('Failed to save profile. Please try again.')
       setTimeout(() => setSaveMessage(''), 5000)
     } finally {
@@ -188,7 +215,7 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
       <h3 className="text-xl font-bold mb-6">Profile Information</h3>
       
       {saveMessage && (
-        <div className={`mb-4 p-3 rounded-lg text-sm ${
+        <div role="alert" aria-live="polite" className={`mb-4 p-3 rounded-lg text-sm ${
           saveMessage.includes('success') 
             ? 'bg-neon-green/10 border border-neon-green/30 text-neon-green' 
             : 'bg-neon-pink/10 border border-neon-pink/30 text-neon-pink'
@@ -210,28 +237,38 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} aria-label="Profile settings form" className="space-y-6">
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="profile-name" className="block text-sm font-medium text-gray-400 mb-2">
               Full Name
             </label>
             <input
+              id="profile-name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+              className={`w-full bg-dark-lighter border rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all ${
+                fieldErrors.name ? 'border-neon-pink' : 'border-gray-800'
+              }`}
+              aria-invalid={fieldErrors.name ? 'true' : 'false'}
+              aria-describedby={fieldErrors.name ? 'name-error' : undefined}
             />
+            {fieldErrors.name && (
+              <p id="name-error" className="mt-1 text-sm text-neon-pink" role="alert">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label htmlFor="profile-role" className="block text-sm font-medium text-gray-400 mb-2">
               Role
             </label>
             <select
+              id="profile-role"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+              aria-label="Select your role"
             >
               {ROLE_LIST.map(role => (
                 <option key={role.value} value={role.value}>
@@ -243,58 +280,96 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
+          <label htmlFor="profile-bio" className="block text-sm font-medium text-gray-400 mb-2">
             Bio
           </label>
           <textarea
+            id="profile-bio"
             value={formData.bio}
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
             rows={4}
-            className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+            className={`w-full bg-dark-lighter border rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all ${
+              fieldErrors.bio ? 'border-neon-pink' : 'border-gray-800'
+            }`}
             placeholder="Tell us about yourself..."
+            maxLength={500}
+            aria-invalid={fieldErrors.bio ? 'true' : 'false'}
+            aria-describedby={fieldErrors.bio ? 'bio-error' : 'bio-hint'}
           />
+          <p id="bio-hint" className="mt-1 text-xs text-gray-500">{formData.bio.length}/500 characters</p>
+          {fieldErrors.bio && (
+            <p id="bio-error" className="mt-1 text-sm text-neon-pink" role="alert">{fieldErrors.bio}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
+          <label htmlFor="profile-skills" className="block text-sm font-medium text-gray-400 mb-2">
             Skills (comma-separated)
           </label>
           <input
+            id="profile-skills"
             type="text"
             value={formData.skills}
             onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-            className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+            className={`w-full bg-dark-lighter border rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all ${
+              fieldErrors.skills ? 'border-neon-pink' : 'border-gray-800'
+            }`}
             placeholder="React, Node.js, UI/UX..."
+            aria-label="Your skills separated by commas"
+            aria-invalid={fieldErrors.skills ? 'true' : 'false'}
+            aria-describedby={fieldErrors.skills ? 'skills-error' : 'skills-hint'}
           />
+          <p id="skills-hint" className="mt-1 text-xs text-gray-500">Separate skills with commas (max 20)</p>
+          {fieldErrors.skills && (
+            <p id="skills-error" className="mt-1 text-sm text-neon-pink" role="alert">{fieldErrors.skills}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              <Github size={16} className="inline mr-2" />
+            <label htmlFor="profile-github" className="block text-sm font-medium text-gray-400 mb-2">
+              <Github size={16} className="inline mr-2" aria-hidden="true" />
               GitHub Username
             </label>
             <input
+              id="profile-github"
               type="text"
               value={formData.github}
               onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+              className={`w-full bg-dark-lighter border rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all ${
+                fieldErrors.github ? 'border-neon-pink' : 'border-gray-800'
+              }`}
               placeholder="username"
+              aria-label="GitHub username"
+              aria-invalid={fieldErrors.github ? 'true' : 'false'}
+              aria-describedby={fieldErrors.github ? 'github-error' : undefined}
             />
+            {fieldErrors.github && (
+              <p id="github-error" className="mt-1 text-sm text-neon-pink" role="alert">{fieldErrors.github}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              <Linkedin size={16} className="inline mr-2" />
+            <label htmlFor="profile-linkedin" className="block text-sm font-medium text-gray-400 mb-2">
+              <Linkedin size={16} className="inline mr-2" aria-hidden="true" />
               LinkedIn URL
             </label>
             <input
-              type="text"
+              id="profile-linkedin"
+              type="url"
               value={formData.linkedin}
               onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-              className="w-full bg-dark-lighter border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all"
+              className={`w-full bg-dark-lighter border rounded-lg px-4 py-3 text-white focus:border-neon-green focus:outline-none transition-all ${
+                fieldErrors.linkedin ? 'border-neon-pink' : 'border-gray-800'
+              }`}
               placeholder="linkedin.com/in/..."
+              aria-label="LinkedIn profile URL"
+              aria-invalid={fieldErrors.linkedin ? 'true' : 'false'}
+              aria-describedby={fieldErrors.linkedin ? 'linkedin-error' : undefined}
             />
+            {fieldErrors.linkedin && (
+              <p id="linkedin-error" className="mt-1 text-sm text-neon-pink" role="alert">{fieldErrors.linkedin}</p>
+            )}
           </div>
         </div>
 
@@ -303,6 +378,7 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
             type="submit"
             disabled={saving}
             className="px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all disabled:opacity-50"
+            aria-label={saving ? 'Saving changes, please wait' : 'Save profile changes'}
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

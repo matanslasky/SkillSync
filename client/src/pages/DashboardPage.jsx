@@ -7,34 +7,45 @@ import CommitmentScoreGauge from '../components/CommitmentScoreGauge'
 import TeamList from '../components/TeamList'
 import AIAssistantCard from '../components/AIAssistantCard'
 import RoleContribution from '../components/RoleContribution'
+import { EmptyProjects } from '../components/EmptyStates'
 import { useAuth } from '../contexts/AuthContext'
 import { Rocket, GitBranch, Target, TrendingUp, Users, Calendar, CheckCircle2 } from 'lucide-react'
 import { getProjects, getTasksByProject } from '../services/firestoreService'
-import { mockProjects, mockTasks, mockUsers, calculateDaysRemaining } from '../data/mockData'
+import { useNavigate } from 'react-router-dom'
 
 const DashboardPage = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   
   const [activeTab, setActiveTab] = useState('overview')
   const [activeProject, setActiveProject] = useState(null)
   const [projects, setProjects] = useState([])
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [teamMembers] = useState(mockUsers.slice(0, 4))
+  const [teamMembers, setTeamMembers] = useState([])
 
   const commitmentScore = user?.commitmentScore || 85
+
+  // Moved function outside useEffect to avoid dependency issues
+  const calculateDaysRemaining = (deadline) => {
+    if (!deadline) return 0
+    const now = new Date()
+    const end = new Date(deadline)
+    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+    return Math.max(0, diff)
+  }
 
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        // Try to fetch from Firebase first
+        // Fetch from Firebase
         const projectsData = await getProjects()
         
-        // If no Firebase data, use mock data
-        if (projectsData.length === 0) {
-          setProjects(mockProjects)
-          const firstProject = mockProjects[0]
-          const projectTasks = mockTasks.filter(t => t.projectId === firstProject.id)
+        setProjects(projectsData)
+        
+        if (projectsData.length > 0) {
+          const firstProject = projectsData[0]
+          const projectTasks = await getTasksByProject(firstProject.id)
           
           setActiveProject({
             ...firstProject,
@@ -43,27 +54,9 @@ const DashboardPage = () => {
             daysRemaining: calculateDaysRemaining(firstProject.deadline)
           })
           setTasks(projectTasks)
-        } else {
-          setProjects(projectsData)
-          
-          if (projectsData.length > 0) {
-            const firstProject = projectsData[0]
-            const projectTasks = await getTasksByProject(firstProject.id)
-            
-            setActiveProject({
-              ...firstProject,
-              tasksCompleted: projectTasks.filter(t => t.status === 'Done').length,
-              tasksTotal: projectTasks.length,
-              daysRemaining: calculateDaysRemaining(firstProject.deadline)
-            })
-            setTasks(projectTasks)
-          }
         }
       } catch (error) {
         console.error('Error loading projects:', error)
-        // Fallback to mock data on error
-        setProjects(mockProjects)
-        setTasks(mockTasks)
       } finally {
         setLoading(false)
       }
@@ -71,14 +64,6 @@ const DashboardPage = () => {
 
     loadProjects()
   }, [])
-
-  const calculateDaysRemaining = (deadline) => {
-    if (!deadline) return 0
-    const now = new Date()
-    const end = new Date(deadline)
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
-    return Math.max(0, diff)
-  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Rocket size={16} /> },
@@ -99,7 +84,17 @@ const DashboardPage = () => {
     }
   }
 
-  const renderOverview = () => (
+  const renderOverview = () => {
+    // Show empty state if no projects
+    if (projects.length === 0) {
+      return (
+        <div className="glass-effect rounded-xl p-8">
+          <EmptyProjects onCreateProject={() => navigate('/marketplace')} />
+        </div>
+      )
+    }
+
+    return (
     <>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -107,12 +102,12 @@ const DashboardPage = () => {
           icon={<Rocket className="text-neon-green" />}
           label="Active Projects"
           value={projects.length.toString()}
-          change={`+${Math.floor(projects.length / 2)} this month`}
+          change={`${projects.length} active`}
         />
         <StatCard
           icon={<GitBranch className="text-neon-blue" />}
           label="Commits This Week"
-          value="47"
+          value="0"
           change="+12 from last week"
         />
         <StatCard
@@ -162,7 +157,7 @@ const DashboardPage = () => {
                   <p className="text-xs text-gray-500 mt-1">Days Left</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-neon-green">{activeProject.team?.length || teamMembers.length}</p>
+                  <p className="text-2xl font-bold text-neon-green">{activeProject.team?.length || 0}</p>
                   <p className="text-xs text-gray-500 mt-1">Team Size</p>
                 </div>
               </div>
@@ -210,7 +205,8 @@ const DashboardPage = () => {
         </div>
       </div>
     </>
-  )
+    )
+  }
 
   const renderMyTeam = () => (
     <div className="space-y-6">
