@@ -156,13 +156,16 @@ const ProfileSettings = ({ user, settings, updateSettings }) => {
     try {
       profileUpdateSchema.parse(profileData)
     } catch (validationError) {
-      if (validationError.errors) {
+      console.error('Validation error:', validationError)
+      if (validationError.issues) {
         const errors = {}
-        validationError.errors.forEach((err) => {
+        validationError.issues.forEach((err) => {
           errors[err.path[0]] = err.message
         })
         setFieldErrors(errors)
         logger.warn('Profile validation failed', { errors })
+      } else {
+        setError('Please check your input and try again')
       }
       setSaving(false)
       return

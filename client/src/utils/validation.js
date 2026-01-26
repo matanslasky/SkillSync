@@ -27,13 +27,13 @@ export const registerSchema = z.object({
     'Developer',
     'Designer',
     'Product Manager',
-    'Marketing',
-    'Data Scientist',
-    'Business Analyst',
-    'Other'
+    'Growth Lead',
+    'Legal Consultant',
+    'User Researcher',
+    'Content Strategist'
   ], { errorMap: () => ({ message: 'Please select a valid role' }) }),
   
-  skills: z.array(z.string()).min(1, 'Please add at least one skill')
+  skills: z.array(z.string()).optional().default([])
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword']

@@ -34,12 +34,15 @@ const Register = () => {
     try {
       registerSchema.parse(formData)
     } catch (validationError) {
-      if (validationError.errors) {
+      console.error('Validation error:', validationError)
+      if (validationError.issues) {
         const errors = {}
-        validationError.errors.forEach((err) => {
+        validationError.issues.forEach((err) => {
           errors[err.path[0]] = err.message
         })
         setFieldErrors(errors)
+      } else {
+        setError('Please check your input and try again')
       }
       setLoading(false)
       return

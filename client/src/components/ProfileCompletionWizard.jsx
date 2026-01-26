@@ -5,7 +5,7 @@ import { updateUser } from '../services/firestoreService'
 import { useAuth } from '../contexts/AuthContext'
 
 const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
-  const { user, updateUserProfile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -18,6 +18,7 @@ const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
   })
   const [skillInput, setSkillInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const totalSteps = 4
 
@@ -66,24 +67,27 @@ const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
 
   const handleComplete = async () => {
     setSaving(true)
+    setError('')
     try {
+      if (!user?.uid) {
+        throw new Error('User not authenticated')
+      }
+
       await updateUser(user.uid, {
-        ...formData,
+        bio: formData.bio || '',
+        role: formData.role || user.role,
+        skills: formData.skills || [],
+        githubUsername: formData.githubUrl || '',
+        linkedin: formData.linkedinUrl || '',
+        portfolio: formData.portfolioUrl || '',
         profileCompleted: true,
-        profileCompleteness: calculateCompleteness()
-      })
-      
-      await updateUserProfile({
-        ...user,
-        ...formData,
-        profileCompleted: true
+        updatedAt: new Date()
       })
 
       onComplete?.()
-      navigate('/dashboard')
     } catch (error) {
       console.error('Error completing profile:', error)
-      alert('Failed to save profile. Please try again.')
+      setError(error.message || 'Failed to save profile. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -321,6 +325,13 @@ const ProfileCompletionWizard = ({ onComplete, onSkip }) => {
             ))}
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-neon-pink/10 border border-neon-pink/30 rounded-lg text-neon-pink text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Step Content */}
         {renderStep()}
