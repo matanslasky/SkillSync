@@ -15,6 +15,7 @@ import { getTasksByStatus, moveTask, createTask, deleteTask, TASK_STATUS, TASK_P
 import { getProjectById, createNotification } from '../services/firestoreService'
 import { mockUsers } from '../data/mockData'
 import { useAuth } from '../contexts/AuthContext'
+import { socketService } from '../services/socketService'
 
 const KanbanBoard = ({ projectId }) => {
   const { user } = useAuth()
@@ -40,6 +41,21 @@ const KanbanBoard = ({ projectId }) => {
   useEffect(() => {
     if (projectId) {
       loadTasks()
+      
+      // Join project room for real-time updates
+      socketService.joinProject(projectId)
+      
+      // Listen for task updates from other users
+      const unsubscribe = socketService.onTaskUpdate((data) => {
+        if (data.projectId === projectId) {
+          loadTasks() // Reload tasks when updates occur
+        }
+      })
+      
+      return () => {
+        unsubscribe()
+        socketService.leaveProject(projectId)
+      }
     }
   }, [projectId])
 
@@ -77,6 +93,8 @@ const KanbanBoard = ({ projectId }) => {
       const task = findTask(taskId)
       
       if (task && task.status !== newStatus) {
+        const oldStatus = task.status
+        
         // Optimistic update
         const updatedTasks = { ...tasks }
         updatedTasks[task.status] = updatedTasks[task.status].filter(t => t.id !== taskId)
@@ -86,6 +104,15 @@ const KanbanBoard = ({ projectId }) => {
         // Update in Firestore
         try {
           await moveTask(taskId, newStatus)
+          
+          // Broadcast update via Socket.io
+          socketService.updateTask(projectId, {
+            taskId,
+            oldStatus,
+            newStatus,
+            task: { ...task, status: newStatus },
+            updatedBy: user?.displayName || user?.email
+          })
         } catch (error) {
           console.error('Error moving task:', error)
           // Revert on error
@@ -118,6 +145,14 @@ const KanbanBoard = ({ projectId }) => {
       const updatedTasks = { ...tasks }
       updatedTasks[status] = updatedTasks[status].filter(t => t.id !== taskId)
       setTasks(updatedTasks)
+      
+      // Broadcast deletion via Socket.io
+      socketService.updateTask(projectId, {
+        taskId,
+        action: 'delete',
+        status,
+        updatedBy: user?.displayName || user?.email
+      })
     } catch (error) {
       console.error('Error deleting task:', error)
     }

@@ -7,6 +7,7 @@ import CommitmentScoreGauge from '../components/CommitmentScoreGauge'
 import TeamList from '../components/TeamList'
 import AIAssistantCard from '../components/AIAssistantCard'
 import RoleContribution from '../components/RoleContribution'
+import ActivityFeed from '../components/ActivityFeed'
 import { EmptyProjects } from '../components/EmptyStates'
 import { useAuth } from '../contexts/AuthContext'
 import { Rocket, GitBranch, Target, TrendingUp, Users, Calendar, CheckCircle2 } from 'lucide-react'
@@ -169,23 +170,7 @@ const DashboardPage = () => {
           )}
 
           {/* Recent Activity */}
-          <div className="glass-effect rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-            <div className="space-y-3">
-              {tasks.slice(0, 3).map((task) => (
-                <ActivityItem
-                  key={task.id}
-                  user={task.assignedToName || 'Team'}
-                  action={task.status === 'Done' ? 'completed task' : 'working on'}
-                  target={task.title}
-                  time="Recently"
-                />
-              ))}
-              {tasks.length === 0 && (
-                <p className="text-gray-500 text-sm text-center py-4">No recent activity</p>
-              )}
-            </div>
-          </div>
+          <ActivityFeed projectIds={projects.map(p => p.id)} limit={10} />
         </div>
 
         {/* Right Column - Commitment Score & Team */}
@@ -305,32 +290,32 @@ const DashboardPage = () => {
       
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="p-4 md:p-8 pt-16 md:pt-8">
           {/* Header */}
-          <div className="mb-8 flex items-start justify-between">
+          <div className="mb-6 md:mb-8 flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">
                 Welcome back, <span className="text-neon-green">{user?.name || 'Developer'}</span>
               </h2>
-              <p className="text-gray-500">Here's what's happening with your projects today.</p>
+              <p className="text-sm md:text-base text-gray-500">Here's what's happening with your projects today.</p>
             </div>
             {/* NotificationBell temporarily disabled - Create Firestore indexes first */}
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-gray-800">
+          <div className="flex gap-2 mb-6 border-b border-gray-800 overflow-x-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 font-medium transition-all whitespace-nowrap text-sm md:text-base ${
                   activeTab === tab.id
                     ? 'text-neon-green border-b-2 border-neon-green'
                     : 'text-gray-500 hover:text-gray-300'
                 }`}
               >
                 {tab.icon}
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>

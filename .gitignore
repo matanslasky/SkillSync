@@ -48,6 +48,8 @@ Thumbs.db
 # MongoDB
 data/
 
+# Internal Documentation
+SERVER_CALLS_EXPLAINED.md
 # Documentation (keep only README.md)
 *.md
 !README.md

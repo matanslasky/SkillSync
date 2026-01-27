@@ -7,6 +7,7 @@ import { getUserSettings, saveUserSettings } from '../services/settingsService'
 import ImageUpload from '../components/ImageUpload'
 import { profileUpdateSchema } from '../utils/validation'
 import logger from '../utils/logger'
+import NotificationSettings from '../components/NotificationSettings'
 
 const Settings = () => {
   const { user } = useAuth()
@@ -97,7 +98,7 @@ const Settings = () => {
           <div className="flex-1">
             {activeTab === 'profile' && <ProfileSettings user={user} settings={settings} updateSettings={updateSettings} />}
             {activeTab === 'account' && <AccountSettings user={user} />}
-            {activeTab === 'notifications' && <NotificationSettings settings={settings} updateSettings={updateSettings} />}
+            {activeTab === 'notifications' && <NotificationSettings />}
             {activeTab === 'appearance' && <AppearanceSettings settings={settings} updateSettings={updateSettings} />}
             {activeTab === 'privacy' && <PrivacySettings settings={settings} updateSettings={updateSettings} />}
           </div>
@@ -483,65 +484,6 @@ const AccountSettings = ({ user }) => {
         <button className="px-6 py-3 bg-neon-pink/10 text-neon-pink border border-neon-pink/30 font-semibold rounded-lg hover:bg-neon-pink/20 transition-all">
           Delete Account
         </button>
-      </div>
-    </div>
-  )
-}
-
-const NotificationSettings = ({ settings, updateSettings }) => {
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    projectUpdates: true,
-    taskAssignments: true,
-    teamMessages: true,
-    weeklyDigest: false,
-    marketingEmails: false,
-  })
-
-  // Load notification settings
-  useEffect(() => {
-    if (settings?.notifications) {
-      setNotifications(settings.notifications)
-    }
-  }, [settings])
-
-  const handleToggle = async (key) => {
-    const newNotifications = { ...notifications, [key]: !notifications[key] }
-    setNotifications(newNotifications)
-    
-    const newSettings = {
-      ...settings,
-      notifications: newNotifications
-    }
-    await updateSettings(newSettings)
-  }
-
-  return (
-    <div className="glass-effect rounded-xl p-6 border border-gray-800">
-      <h3 className="text-xl font-bold mb-6">Notification Preferences</h3>
-      
-      <div className="space-y-4">
-        {Object.entries(notifications).map(([key, value]) => (
-          <div key={key} className="flex items-center justify-between py-3 border-b border-gray-800">
-            <div>
-              <p className="font-medium text-white">
-                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              </p>
-              <p className="text-sm text-gray-500">
-                Receive notifications for this activity
-              </p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={() => handleToggle(key)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-green"></div>
-            </label>
-          </div>
-        ))}
       </div>
     </div>
   )

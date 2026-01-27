@@ -7,10 +7,11 @@ import JoinRequestModal from '../components/JoinRequestModal'
 import JoinRequestManager from '../components/JoinRequestManager'
 import KanbanBoard from '../components/KanbanBoard'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
+import ProjectChatPanel from '../components/ProjectChatPanel'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
-import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare, Share2, Flag, Settings } from 'lucide-react'
+import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare, Share2, Flag, Settings, MessageCircle } from 'lucide-react'
 
 const ProjectView = () => {
   const { id } = useParams()
@@ -281,6 +282,17 @@ const ProjectView = () => {
                 <KanbanSquare size={18} />
                 Kanban Board
               </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
+                  activeTab === 'chat'
+                    ? 'text-neon-green border-b-2 border-neon-green'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <MessageCircle size={18} />
+                Team Chat
+              </button>
             </div>
           )}
 
@@ -478,6 +490,13 @@ const ProjectView = () => {
           {activeTab === 'tasks' && isTeamMember && (
             <div>
               <KanbanBoard projectId={id} />
+            </div>
+          )}
+
+          {/* Team Chat Tab */}
+          {activeTab === 'chat' && isTeamMember && (
+            <div className="glass-effect rounded-xl border border-gray-800 h-[600px]">
+              <ProjectChatPanel projectId={id} projectName={project.name || project.title} />
             </div>
           )}
         </div>

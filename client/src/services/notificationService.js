@@ -14,6 +14,7 @@ import {
   writeBatch
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { pushNotificationService } from './pushNotificationService'
 
 /**
  * Notification types
@@ -35,9 +36,10 @@ export const NOTIFICATION_TYPES = {
 /**
  * Create a new notification
  * @param {Object} notificationData - The notification data
+ * @param {Object} userPreferences - User notification preferences
  * @returns {Promise<string>} The notification ID
  */
-export const createNotification = async (notificationData) => {
+export const createNotification = async (notificationData, userPreferences = null) => {
   try {
     const notification = {
       ...notificationData,
@@ -46,6 +48,16 @@ export const createNotification = async (notificationData) => {
     }
     
     const docRef = await addDoc(collection(db, 'notifications'), notification)
+    
+    // Show push notification if enabled
+    if (notificationData.type && notificationData.data) {
+      await pushNotificationService.showNotificationIfEnabled(
+        notificationData.type,
+        notificationData.data,
+        userPreferences
+      )
+    }
+    
     return docRef.id
   } catch (error) {
     console.error('Error creating notification:', error)

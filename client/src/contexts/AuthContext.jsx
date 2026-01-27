@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, useEffect } from 'react'
 import * as authService from '../services/authService'
+import socketService from '../services/socketService'
 
 const AuthContext = createContext(null)
 
@@ -14,17 +15,37 @@ export const AuthProvider = ({ children }) => {
         try {
           const userData = await authService.getCurrentUser()
           setUser(userData)
+          
+          // Connect socket when user logs in
+          socketService.connect(firebaseUser.uid)
+          
+          // Set online status
+          socketService.setOnlineStatus('online')
         } catch (error) {
           console.error('Error fetching user data:', error)
           setUser(null)
         }
       } else {
         setUser(null)
+        // Set offline status before disconnect
+        socketService.setOnlineStatus('offline')
+        // Disconnect socket when user logs out
+        socketService.disconnect()
       }
       setLoading(false)
     })
 
-    return () => unsubscribe()
+    // Handle browser close/refresh - set offline status
+    const handleBeforeUnload = () => {
+      socketService.setOnlineStatus('offline')
+    }
+    
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }, [])
 
   const login = async (email, password) => {
