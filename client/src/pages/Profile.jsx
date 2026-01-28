@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar'
 import { useAuth } from '../contexts/AuthContext'
 import { Mail, Linkedin, Github, MapPin, Calendar, Award, Code, Briefcase, Star } from 'lucide-react'
 import { mockUsers } from '../data/mockData'
+import GamificationPanel from '../components/GamificationPanel'
 
 const Profile = () => {
   const { id } = useParams()
@@ -165,7 +166,7 @@ const Profile = () => {
           </div>
 
           {/* Projects */}
-          <div className="glass-effect rounded-xl p-6 border border-gray-800">
+          <div className="glass-effect rounded-xl p-6 border border-gray-800 mb-8">
             <h3 className="text-2xl font-bold mb-4">Projects</h3>
             <div className="space-y-3">
               {projects.map((project) => (
@@ -188,6 +189,9 @@ const Profile = () => {
               ))}
             </div>
           </div>
+
+          {/* Gamification Panel */}
+          {isOwnProfile && <GamificationPanel />}
         </div>
       </main>
     </div>

@@ -9,6 +9,7 @@ import AIAssistantCard from '../components/AIAssistantCard'
 import RoleContribution from '../components/RoleContribution'
 import ActivityFeed from '../components/ActivityFeed'
 import AdvancedSearch from '../components/AdvancedSearch'
+import SuggestionsPanel from '../components/SuggestionsPanel'
 import { EmptyProjects } from '../components/EmptyStates'
 import { useAuth } from '../contexts/AuthContext'
 import { Rocket, GitBranch, Target, TrendingUp, Users, Calendar, CheckCircle2, Search } from 'lucide-react'
@@ -184,6 +185,9 @@ const DashboardPage = () => {
           <div className="glass-effect rounded-xl p-6">
             <CommitmentScoreGauge userId={user?.uid} showHistory={true} />
           </div>
+
+          {/* Smart Suggestions */}
+          <SuggestionsPanel userId={user?.uid} type="user" />
 
           {/* AI Assistant Card */}
           <AIAssistantCard />

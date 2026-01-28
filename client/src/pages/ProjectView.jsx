@@ -9,6 +9,7 @@ import KanbanBoard from '../components/KanbanBoard'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import ProjectChatPanel from '../components/ProjectChatPanel'
 import ExportImportMenu from '../components/ExportImportMenu'
+import SuggestionsPanel from '../components/SuggestionsPanel'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
@@ -491,6 +492,11 @@ const ProjectView = () => {
                 </ul>
               </div>
             </div>
+              </div>
+              
+              {/* Smart Suggestions */}
+              <div className="mt-8">
+                <SuggestionsPanel projectId={id} userId={user?.uid} type="project" />
               </div>
               
               {/* Milestone Timeline - Full Width */}
