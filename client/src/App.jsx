@@ -21,6 +21,7 @@ const MessagesPage = lazy(() => import('./pages/MessagesPage'))
 const AssignmentsPage = lazy(() => import('./pages/AssignmentsPage'))
 const About = lazy(() => import('./pages/About'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ function App() {
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
                 <Route path="/project/:id" element={<ProtectedRoute><ProjectView /></ProtectedRoute>} />
+                <Route path="/project/:projectId/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                 <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />

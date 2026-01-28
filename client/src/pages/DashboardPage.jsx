@@ -8,15 +8,20 @@ import TeamList from '../components/TeamList'
 import AIAssistantCard from '../components/AIAssistantCard'
 import RoleContribution from '../components/RoleContribution'
 import ActivityFeed from '../components/ActivityFeed'
+import AdvancedSearch from '../components/AdvancedSearch'
 import { EmptyProjects } from '../components/EmptyStates'
 import { useAuth } from '../contexts/AuthContext'
-import { Rocket, GitBranch, Target, TrendingUp, Users, Calendar, CheckCircle2 } from 'lucide-react'
+import { Rocket, GitBranch, Target, TrendingUp, Users, Calendar, CheckCircle2, Search } from 'lucide-react'
 import { getProjects, getTasksByProject } from '../services/firestoreService'
 import { useNavigate } from 'react-router-dom'
+import { useSearchShortcut } from '../hooks/useSearchShortcut'
 
 const DashboardPage = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [showSearch, setShowSearch] = useState(false)
+  
+  useSearchShortcut(() => setShowSearch(true))
   
   const [activeTab, setActiveTab] = useState('overview')
   const [activeProject, setActiveProject] = useState(null)
@@ -288,6 +293,18 @@ const DashboardPage = () => {
     <div className="flex h-screen bg-dark overflow-hidden">
       <Sidebar />
       
+      {/* Advanced Search Modal */}
+      {showSearch && (
+        <AdvancedSearch
+          onClose={() => setShowSearch(false)}
+          onResultSelect={(type, id) => {
+            setShowSearch(false);
+            if (type === 'project') navigate(`/project/${id}`);
+            else if (type === 'user') navigate(`/profile/${id}`);
+          }}
+        />
+      )}
+      
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-8 pt-16 md:pt-8">
@@ -299,7 +316,16 @@ const DashboardPage = () => {
               </h2>
               <p className="text-sm md:text-base text-gray-500">Here's what's happening with your projects today.</p>
             </div>
-            {/* NotificationBell temporarily disabled - Create Firestore indexes first */}
+            <button
+              onClick={() => setShowSearch(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+            >
+              <Search size={18} />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden md:inline px-2 py-1 text-xs bg-gray-900 border border-gray-700 rounded">
+                Ctrl+K
+              </kbd>
+            </button>
           </div>
 
           {/* Tabs */}

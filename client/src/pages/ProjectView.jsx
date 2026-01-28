@@ -8,10 +8,11 @@ import JoinRequestManager from '../components/JoinRequestManager'
 import KanbanBoard from '../components/KanbanBoard'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import ProjectChatPanel from '../components/ProjectChatPanel'
+import ExportImportMenu from '../components/ExportImportMenu'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
-import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare, Share2, Flag, Settings, MessageCircle } from 'lucide-react'
+import { Calendar, Target, Users, CheckCircle, Clock, Github, Linkedin, Mail, FileText, PenTool, TrendingUp, KanbanSquare, Share2, Flag, Settings, MessageCircle, BarChart3 } from 'lucide-react'
 
 const ProjectView = () => {
   const { id } = useParams()
@@ -155,6 +156,12 @@ const ProjectView = () => {
               </div>
               
               <div className="flex gap-3">
+                {isTeamMember && (
+                  <ExportImportMenu 
+                    projectId={id} 
+                    onImportSuccess={(newProjectId) => navigate(`/project/${newProjectId}`)}
+                  />
+                )}
                 {isProjectOwner && (
                   <button 
                     onClick={() => setShowSettingsModal(true)}
@@ -292,6 +299,13 @@ const ProjectView = () => {
               >
                 <MessageCircle size={18} />
                 Team Chat
+              </button>
+              <button
+                onClick={() => navigate(`/project/${id}/analytics`)}
+                className="px-6 py-3 font-semibold transition-all flex items-center gap-2 text-gray-400 hover:text-white"
+              >
+                <BarChart3 size={18} />
+                Analytics
               </button>
             </div>
           )}
