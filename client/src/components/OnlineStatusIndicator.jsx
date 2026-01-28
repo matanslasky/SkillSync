@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Circle } from 'lucide-react';
-import { socketService } from '../services/socketService';
+import socketService from '../services/socketService';
 
 /**
  * OnlineStatusIndicator - Shows user online/offline status

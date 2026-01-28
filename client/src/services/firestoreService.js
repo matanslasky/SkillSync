@@ -28,15 +28,33 @@ export const createProject = async (projectData) => {
   return { id: newDoc.id, ...newDoc.data() }
 }
 
-export const getProjects = async () => {
-  const q = query(
-    collection(db, 'projects'),
-    where('status', '==', 'Active'),
-    orderBy('createdAt', 'desc')
-  )
-  
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+export const getProjects = async (userId = null) => {
+  try {
+    let q;
+    
+    if (userId) {
+      // Get projects where user is a member
+      q = query(
+        collection(db, 'projects'),
+        where('team', 'array-contains', userId),
+        orderBy('createdAt', 'desc')
+      )
+    } else {
+      // Get all active projects (for marketplace/browse)
+      q = query(
+        collection(db, 'projects'),
+        where('status', '==', 'Active'),
+        orderBy('createdAt', 'desc')
+      )
+    }
+    
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  } catch (error) {
+    logger.error('Error fetching projects', error, { userId })
+    // Return empty array on error to avoid breaking the UI
+    return []
+  }
 }
 
 export const getProjectById = async (projectId) => {

@@ -3,8 +3,6 @@
  * Handles browser push notifications and permission management
  */
 
-import { logger } from './api';
-
 class PushNotificationService {
   constructor() {
     this.permission = 'default';

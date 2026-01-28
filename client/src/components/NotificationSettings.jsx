@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Volume2, MessageSquare, CheckSquare, Users, Trophy, AlertCircle } from 'lucide-react';
 import { pushNotificationService } from '../services/pushNotificationService';
 import { useAuth } from '../contexts/AuthContext';
-import { updateUserSettings, getUserSettings } from '../services/settingsService';
+import { updateSettingsSection, getUserSettings } from '../services/settingsService';
 
 const NotificationSettings = () => {
   const { user } = useAuth();
@@ -80,9 +80,7 @@ const NotificationSettings = () => {
     
     setSaving(true);
     try {
-      await updateUserSettings(user.uid, {
-        notifications: newPreferences,
-      });
+      await updateSettingsSection(user.uid, 'notifications', newPreferences);
     } catch (error) {
       console.error('Error saving notification settings:', error);
     } finally {

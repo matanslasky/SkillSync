@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Activity, CheckCircle2, MessageSquare, Users, Trophy, AlertCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
-import { socketService } from '../services/socketService';
+import socketService from '../services/socketService';
 
 /**
  * ActivityFeed - Real-time activity feed for dashboard

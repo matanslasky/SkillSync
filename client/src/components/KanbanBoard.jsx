@@ -15,7 +15,7 @@ import { getTasksByStatus, moveTask, createTask, deleteTask, TASK_STATUS, TASK_P
 import { getProjectById, createNotification } from '../services/firestoreService'
 import { mockUsers } from '../data/mockData'
 import { useAuth } from '../contexts/AuthContext'
-import { socketService } from '../services/socketService'
+import socketService from '../services/socketService'
 
 const KanbanBoard = ({ projectId }) => {
   const { user } = useAuth()

@@ -12,17 +12,30 @@ import {
   AlertTriangle,
   MessageSquare,
   Calendar,
-  BarChart3
+  BarChart3,
+  UserX,
+  UserCheck,
+  Settings
 } from 'lucide-react'
-import { getAllUsers } from '../services/userService'
-import { getProjects } from '../services/projectService'
+import { 
+  getAllUsers, 
+  getSystemStats, 
+  updateUserStatus, 
+  updateUserRole,
+  bulkUpdateUserStatus,
+  getUserActivity
+} from '../services/adminService'
+import { getProjects } from '../services/firestoreService'
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([])
   const [projects, setProjects] = useState([])
+  const [systemStats, setSystemStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [showUserDetails, setShowUserDetails] = useState(null)
 
   useEffect(() => {
     loadData()
@@ -31,12 +44,14 @@ const AdminDashboard = () => {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [usersData, projectsData] = await Promise.all([
+      const [usersData, projectsData, statsData] = await Promise.all([
         getAllUsers(),
-        getProjects()
+        getProjects(),
+        getSystemStats()
       ])
       setUsers(usersData)
       setProjects(projectsData)
+      setSystemStats(statsData)
     } catch (error) {
       console.error('Error loading admin data:', error)
     } finally {
@@ -45,9 +60,9 @@ const AdminDashboard = () => {
   }
 
   // Calculate statistics
-  const stats = {
+  const stats = systemStats || {
     totalUsers: users.length,
-    activeUsers: users.filter(u => u.isActive !== false).length,
+    activeUsers: users.filter(u => u.status === 'active').length,
     totalProjects: projects.length,
     activeProjects: projects.filter(p => p.status === 'active').length,
     avgCommitment: users.length > 0 
@@ -72,6 +87,57 @@ const AdminDashboard = () => {
     project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.category?.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleUpdateUserStatus = async (userId, status) => {
+    try {
+      await updateUserStatus(userId, status)
+      await loadData() // Reload data
+      alert(`User status updated to ${status}`)
+    } catch (error) {
+      console.error('Error updating user status:', error)
+      alert('Failed to update user status')
+    }
+  }
+
+  const handleUpdateUserRole = async (userId, role) => {
+    try {
+      await updateUserRole(userId, role)
+      await loadData() // Reload data
+      alert(`User role updated to ${role}`)
+    } catch (error) {
+      console.error('Error updating user role:', error)
+      alert('Failed to update user role')
+    }
+  }
+
+  const handleBulkAction = async (action) => {
+    if (selectedUsers.length === 0) {
+      alert('Please select users first')
+      return
+    }
+    
+    if (!confirm(`Are you sure you want to ${action} ${selectedUsers.length} user(s)?`)) {
+      return
+    }
+    
+    try {
+      await bulkUpdateUserStatus(selectedUsers, action)
+      setSelectedUsers([])
+      await loadData()
+      alert(`Successfully ${action}ed ${selectedUsers.length} user(s)`)
+    } catch (error) {
+      console.error('Error performing bulk action:', error)
+      alert('Failed to perform bulk action')
+    }
+  }
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    )
+  }
 
   return (
     <div className="flex h-screen bg-dark">
@@ -161,7 +227,16 @@ const AdminDashboard = () => {
         ) : (
           <>
             {activeTab === 'overview' && <OverviewTab users={users} projects={projects} stats={stats} />}
-            {activeTab === 'users' && <UsersTab users={filteredUsers} />}
+            {activeTab === 'users' && (
+              <UsersTab 
+                users={filteredUsers} 
+                selectedUsers={selectedUsers}
+                onToggleUser={toggleUserSelection}
+                onUpdateStatus={handleUpdateUserStatus}
+                onUpdateRole={handleUpdateUserRole}
+                onBulkAction={handleBulkAction}
+              />
+            )}
             {activeTab === 'projects' && <ProjectsTab projects={filteredProjects} />}
           </>
         )}
@@ -282,66 +357,147 @@ const ActivityItem = ({ icon, text, time }) => (
   </div>
 )
 
-const UsersTab = ({ users }) => (
-  <div className="glass-effect rounded-xl border border-gray-800 overflow-hidden">
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-dark-lighter border-b border-gray-800">
-          <tr>
-            <th className="px-6 py-4 text-left text-sm font-semibold">User</th>
-            <th className="px-6 py-4 text-left text-sm font-semibold">Role</th>
-            <th className="px-6 py-4 text-left text-sm font-semibold">Commitment</th>
-            <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
-            <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-800">
-          {users.map((user) => (
-            <tr key={user.uid || user.id} className="hover:bg-dark-lighter transition-colors">
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}`}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full"
+const UsersTab = ({ users, selectedUsers, onToggleUser, onUpdateStatus, onUpdateRole, onBulkAction }) => (
+  <div className="space-y-4">
+    {/* Bulk Actions Bar */}
+    {selectedUsers && selectedUsers.length > 0 && (
+      <div className="glass-effect rounded-lg p-4 border border-neon-green/30 flex items-center justify-between">
+        <span className="text-sm">
+          {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onBulkAction('active')}
+            className="px-4 py-2 bg-neon-green/20 text-neon-green rounded-lg hover:bg-neon-green/30 transition-colors text-sm flex items-center gap-2"
+          >
+            <UserCheck size={16} />
+            Activate
+          </button>
+          <button
+            onClick={() => onBulkAction('suspended')}
+            className="px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg hover:bg-orange-500/30 transition-colors text-sm flex items-center gap-2"
+          >
+            <Ban size={16} />
+            Suspend
+          </button>
+        </div>
+      </div>
+    )}
+    
+    <div className="glass-effect rounded-xl border border-gray-800 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-dark-lighter border-b border-gray-800">
+            <tr>
+              {selectedUsers !== undefined && (
+                <th className="px-6 py-4 text-left text-sm font-semibold w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === users.length && users.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        users.forEach(u => onToggleUser(u.uid || u.id))
+                      } else {
+                        users.forEach(u => onToggleUser(u.uid || u.id))
+                      }
+                    }}
+                    className="w-4 h-4"
                   />
-                  <div>
-                    <div className="font-medium">{user.name || 'Unknown'}</div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span className="px-3 py-1 bg-neon-blue/20 text-neon-blue rounded-full text-sm">
-                  {user.role || 'Unknown'}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-dark-lighter rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-neon-pink to-neon-green"
-                      style={{ width: `${user.commitmentScore || 50}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium">{user.commitmentScore || 50}%</span>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                {user.isActive !== false ? (
-                  <span className="flex items-center gap-1 text-neon-green text-sm">
-                    <CheckCircle size={16} /> Active
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-gray-500 text-sm">
-                    <Ban size={16} /> Inactive
-                  </span>
-                )}
-              </td>
-              <td className="px-6 py-4">
-                <button className="text-neon-blue hover:text-neon-green text-sm font-medium transition-colors">
-                  View Profile
-                </button>
+                </th>
+              )}
+              <th className="px-6 py-4 text-left text-sm font-semibold">User</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold">Role</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold">Commitment</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800">
+            {users.map((user) => {
+              const userId = user.uid || user.id
+              return (
+                <tr key={userId} className="hover:bg-dark-lighter transition-colors">
+                  {selectedUsers !== undefined && (
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(userId)}
+                        onChange={() => onToggleUser(userId)}
+                        className="w-4 h-4"
+                      />
+                    </td>
+                  )}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}`}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div>
+                        <div className="font-medium">{user.name || 'Unknown'}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={user.role || 'Developer'}
+                      onChange={(e) => onUpdateRole && onUpdateRole(userId, e.target.value)}
+                      className="px-3 py-1 bg-neon-blue/20 text-neon-blue rounded-full text-sm border-none outline-none cursor-pointer"
+                    >
+                      <option value="Developer">Developer</option>
+                      <option value="Designer">Designer</option>
+                      <option value="Product Manager">Product Manager</option>
+                      <option value="Marketing">Marketing</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-dark-lighter rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-neon-pink to-neon-green"
+                          style={{ width: `${user.commitmentScore || 50}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{user.commitmentScore || 50}%</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {(user.status === 'active' || user.isActive !== false) ? (
+                      <span className="flex items-center gap-1 text-neon-green text-sm">
+                        <CheckCircle size={16} /> Active
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-gray-500 text-sm">
+                        <Ban size={16} /> Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      {(user.status === 'active' || user.isActive !== false) ? (
+                        <button
+                          onClick={() => onUpdateStatus && onUpdateStatus(userId, 'suspended')}
+                          className="text-orange-400 hover:text-orange-300 text-sm font-medium transition-colors"
+                          title="Suspend user"
+                        >
+                          Suspend
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onUpdateStatus && onUpdateStatus(userId, 'active')}
+                          className="text-neon-green hover:text-neon-blue text-sm font-medium transition-colors"
+                          title="Activate user"
+                        >
+                          Activate
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
               </td>
             </tr>
           ))}

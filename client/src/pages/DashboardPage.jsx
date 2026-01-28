@@ -44,9 +44,14 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const loadProjects = async () => {
+      if (!user?.uid) {
+        setLoading(false)
+        return
+      }
+      
       try {
-        // Fetch from Firebase
-        const projectsData = await getProjects()
+        // Fetch user's projects from Firebase
+        const projectsData = await getProjects(user.uid)
         
         setProjects(projectsData)
         
@@ -70,7 +75,7 @@ const DashboardPage = () => {
     }
 
     loadProjects()
-  }, [])
+  }, [user])
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Rocket size={16} /> },

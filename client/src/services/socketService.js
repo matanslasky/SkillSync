@@ -15,6 +15,12 @@ class SocketService {
    * @param {string} userId - The current user's ID
    */
   connect(userId) {
+    // Skip socket connection if no backend server is configured
+    if (!SOCKET_URL || SOCKET_URL.includes('localhost:5000')) {
+      console.log('Socket.io server not available - running in Firebase-only mode')
+      return
+    }
+
     if (this.socket?.connected) {
       logger.info('Socket already connected')
       return
@@ -27,7 +33,8 @@ class SocketService {
         },
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5
+        reconnectionAttempts: 3,
+        timeout: 5000
       })
 
       this.socket.on('connect', () => {
@@ -41,7 +48,8 @@ class SocketService {
       })
 
       this.socket.on('connect_error', (error) => {
-        logger.error('Socket connection error', error, { userId })
+        // Don't spam errors if backend is not available
+        console.log('Socket connection unavailable - continuing without real-time features')
       })
 
       this.socket.on('reconnect', (attemptNumber) => {
@@ -49,7 +57,7 @@ class SocketService {
       })
 
     } catch (error) {
-      logger.error('Failed to initialize socket', error, { userId })
+      console.log('Socket service disabled - no backend server')
     }
   }
 
