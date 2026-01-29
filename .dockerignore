@@ -1,0 +1,63 @@
+# Docker ignore file for SkillSync
+
+# Node modules
+node_modules/
+*/node_modules/
+
+# Build outputs
+client/dist/
+client/build/
+server/dist/
+server/build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation (we can include this, but excluding for smaller image)
+*.md
+!README.md
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+
+# Development files
+.prettierrc
+.eslintrc.json
+.eslintignore
+
+# OS files
+Thumbs.db

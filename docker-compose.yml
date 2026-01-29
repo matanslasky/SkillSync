@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - skillsync-network
+
+  # Optional: Backend service (if you add Node.js backend later)
+  # backend:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - MONGODB_URI=${MONGODB_URI}
+  #     - JWT_SECRET=${JWT_SECRET}
+  #   restart: unless-stopped
+  #   networks:
+  #     - skillsync-network
+
+networks:
+  skillsync-network:
+    driver: bridge
