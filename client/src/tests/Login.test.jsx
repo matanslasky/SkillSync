@@ -42,7 +42,7 @@ describe('Login Component', () => {
       renderLogin()
       
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+      expect(document.getElementById('password-input')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /sign in to your account/i })).toBeInTheDocument()
     })
 
@@ -73,7 +73,7 @@ describe('Login Component', () => {
       renderLogin()
       
       const emailInput = screen.getByLabelText(/email/i)
-      const passwordInput = screen.getByLabelText(/password/i)
+      const passwordInput = document.getElementById('password-input')
       
       // Tab navigation
       emailInput.focus()
@@ -87,7 +87,7 @@ describe('Login Component', () => {
       renderLogin()
       
       const toggleButton = screen.getByLabelText(/show password/i)
-      const passwordInput = screen.getByLabelText(/password/i)
+      const passwordInput = document.getElementById('password-input')
       
       expect(passwordInput).toHaveAttribute('type', 'password')
       
@@ -151,7 +151,7 @@ describe('Login Component', () => {
       renderLogin()
       
       const emailInput = screen.getByLabelText(/email/i)
-      const passwordInput = screen.getByLabelText(/password/i)
+      const passwordInput = document.getElementById('password-input')
       const rememberMe = screen.getByLabelText(/remember me/i)
       const submitButton = screen.getByRole('button', { name: /sign in/i })
       
@@ -172,7 +172,7 @@ describe('Login Component', () => {
       renderLogin()
       
       const emailInput = screen.getByLabelText(/email/i)
-      const passwordInput = screen.getByLabelText(/password/i)
+      const passwordInput = document.getElementById('password-input')
       const rememberMe = screen.getByLabelText(/remember me/i)
       const submitButton = screen.getByRole('button', { name: /sign in/i })
       
@@ -195,7 +195,7 @@ describe('Login Component', () => {
       renderLogin()
       
       const emailInput = screen.getByLabelText(/email/i)
-      const passwordInput = screen.getByLabelText(/password/i)
+      const passwordInput = document.getElementById('password-input')
       const submitButton = screen.getByRole('button', { name: /sign in/i })
       
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } })

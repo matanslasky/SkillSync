@@ -149,7 +149,7 @@ export const validateData = (schema, data) => {
     schema.parse(data)
     return { success: true, errors: {} }
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z.ZodError && error.errors) {
       const errors = {}
       error.errors.forEach((err) => {
         const path = err.path.join('.')
@@ -165,12 +165,12 @@ export const validateData = (schema, data) => {
 export const validateField = (schema, fieldName, value) => {
   try {
     const fieldSchema = schema.shape[fieldName]
-    if (!fieldSchema) return { success: true }
+    if (!fieldSchema) return { success: true, error: null }
     
     fieldSchema.parse(value)
     return { success: true, error: null }
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z.ZodError && error.errors && error.errors[0]) {
       return { success: false, error: error.errors[0].message }
     }
     return { success: false, error: 'Validation failed' }
