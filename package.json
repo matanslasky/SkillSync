@@ -11,12 +11,32 @@
     "client": "npm run dev --workspace=client",
     "server": "npm run dev --workspace=server",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install:all": "npm install && npm install --workspace=client && npm install --workspace=server"
+    "install:all": "npm install && npm install --workspace=client && npm install --workspace=server",
+    "test": "npm run test --workspace=client",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:firefox": "playwright test --project=firefox",
+    "test:e2e:webkit": "playwright test --project=webkit",
+    "test:e2e:mobile": "playwright test --project=mobile-chrome --project=mobile-safari",
+    "test:e2e:accessibility": "playwright test e2e/accessibility.spec.js",
+    "test:e2e:report": "playwright show-report",
+    "test:all": "npm run test && npm run test:e2e"
   },
-  "keywords": ["skillsync", "portfolio", "collaboration"],
+  "keywords": [
+    "skillsync",
+    "portfolio",
+    "collaboration"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@axe-core/playwright": "^4.11.0",
+    "@playwright/test": "^1.58.1",
+    "axe-playwright": "^2.2.2",
+    "concurrently": "^8.2.2",
+    "playwright-chromium": "^1.58.1"
   }
 }

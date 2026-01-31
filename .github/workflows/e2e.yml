@@ -1,0 +1,217 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  test-e2e:
+    name: E2E Tests
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Install client dependencies
+        run: cd client && npm ci
+      
+      - name: Build client
+        run: cd client && npm run build
+      
+      - name: Run E2E tests
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          CI: true
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            playwright-results.json
+            playwright-results.xml
+            test-results/
+          retention-days: 30
+      
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-screenshots-${{ matrix.browser }}
+          path: test-results/**/**.png
+          retention-days: 7
+      
+      - name: Upload videos
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-videos-${{ matrix.browser }}
+          path: test-results/**/**.webm
+          retention-days: 7
+  
+  test-e2e-mobile:
+    name: E2E Tests (Mobile)
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [mobile-chrome, mobile-safari]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium webkit
+      
+      - name: Install client dependencies
+        run: cd client && npm ci
+      
+      - name: Build client
+        run: cd client && npm run build
+      
+      - name: Run E2E tests (Mobile)
+        run: npx playwright test --project=${{ matrix.device }}
+        env:
+          CI: true
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results-${{ matrix.device }}
+          path: |
+            playwright-report/
+            playwright-results.json
+            playwright-results.xml
+            test-results/
+          retention-days: 30
+      
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-screenshots-${{ matrix.device }}
+          path: test-results/**/**.png
+          retention-days: 7
+  
+  test-e2e-accessibility:
+    name: Accessibility Tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Install client dependencies
+        run: cd client && npm ci
+      
+      - name: Build client
+        run: cd client && npm run build
+      
+      - name: Run Accessibility tests
+        run: npx playwright test e2e/accessibility.spec.js
+        env:
+          CI: true
+      
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: accessibility-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+  
+  test-results-summary:
+    name: Test Results Summary
+    needs: [test-e2e, test-e2e-mobile, test-e2e-accessibility]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: test-results
+      
+      - name: Generate summary
+        run: |
+          echo "# E2E Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Execution Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Desktop Tests: ${{ needs.test-e2e.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Mobile Tests: ${{ needs.test-e2e-mobile.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Accessibility Tests: ${{ needs.test-e2e-accessibility.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Test results, screenshots, and videos have been uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const summary = `## E2E Test Results
+            
+            - Desktop Tests: ${{ needs.test-e2e.result }}
+            - Mobile Tests: ${{ needs.test-e2e-mobile.result }}
+            - Accessibility Tests: ${{ needs.test-e2e-accessibility.result }}
+            
+            Test artifacts have been uploaded and are available in the workflow run.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
