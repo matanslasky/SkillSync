@@ -1,62 +1,51 @@
-# SkillSync - The Portfolio Revolution Platform
+# SkillSync
 
-A collaborative platform where students (Developers, Designers, Marketers) form teams to build real-world micro-startups.
+SkillSync is a team collaboration platform built for students who want to work on real projects together. Whether you're a developer, designer, or marketer, you can find teammates, manage tasks, and track your progress all in one place.
 
-## Features
+## What It Does
 
-- **Dynamic Team Formation**: Marketplace for project ideas with skill-based matching
-- **Commitment Score Engine**: 0-100 scoring based on GitHub activity, deadlines, peer reviews, and meeting attendance
-- **Integrated Meeting & Workspace**: Built-in video conferencing with automated attendance tracking
-- **AI Project Mentor**: LLM-powered roadmap generation and project guidance
-- **Real-time Collaboration**: Socket.io for live updates and notifications
-- **Kanban Board**: Drag-and-drop task management
+The platform helps student teams collaborate on projects by providing everything they need in one spot. You can create projects, invite team members, break work into tasks using a kanban board, and see how everyone's contributing. There's also a commitment scoring system that keeps everyone accountable based on their activity and completion of tasks.
 
-## Tech Stack
+## Built With
 
-### Frontend
-- React 18 with Vite
-- Tailwind CSS v3 with custom dark theme
-- Lucide-React icons
-- React Router v6
-- Firebase SDK (Auth, Firestore, Storage)
+**Frontend**
+- React 18 with Vite for fast development
+- Tailwind CSS for styling (with dark mode support)
+- React Router for navigation
+- Firebase for authentication and data storage
 
-### Backend
-- Firebase Authentication (email/password, social auth)
-- Cloud Firestore (NoSQL database)
-- Firebase Storage (file uploads)
-- Future: Cloud Functions for serverless API
+**Backend & Infrastructure**
+- Firebase Authentication (email/password and social logins)
+- Cloud Firestore for the database
+- Firebase Storage for file uploads
+- GitHub Actions for automated testing and deployment
+- Docker support for containerized deployments
 
-## Getting Started
+**Testing & Quality**
+- Vitest for unit tests
+- React Testing Library for component tests
+- Playwright for end-to-end testing across browsers
+- Sentry for error tracking in production
 
-### Prerequisites
-- Node.js 18+ 
-- Google account for Firebase
-- npm or yarn
+## Getting It Running
 
-### Quick Start
+You'll need Node.js 18 or higher and a Firebase account.
 
-1. **Clone the repository**
+**1. Clone and install**
 ```bash
-git clone https://github.com/yourusername/skillsync.git
-cd skillsync
+git clone https://github.com/matanslasky/SkillSync.git
+cd SkillSync
+npm install
+cd client && npm install
 ```
 
-2. **Install dependencies**
-```bash
-npm install
-cd client
-npm install
-```
+**2. Firebase setup**
 
-3. **Set up Firebase** (see [FIREBASE-SETUP.md](FIREBASE-SETUP.md) for detailed guide)
-   - Create Firebase project at https://console.firebase.google.com
-   - Enable Authentication (Email/Password)
-   - Create Firestore database in test mode
-   - Copy config values
+Create a Firebase project at console.firebase.google.com. Enable Authentication (email/password) and create a Firestore database. Check out `FIREBASE-SETUP.md` for the full walkthrough.
 
-4. **Configure environment variables**
+**3. Environment variables**
 
-Create `client/.env` file:
+Copy `client/.env.example` to `client/.env` and fill in your Firebase config:
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
@@ -66,34 +55,66 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-5. **Run the application**
+**4. Start developing**
 ```bash
 cd client
 npm run dev
 ```
 
-Visit http://localhost:5173 to see the app!
+Open http://localhost:5173 and you're good to go.
+
+## Running Tests
+
+```bash
+# Unit and component tests
+npm test
+
+# E2E tests (requires the dev server running)
+npm run test:e2e
+
+# Just accessibility tests
+npm run test:e2e:accessibility
+
+# All tests
+npm run test:all
+```
+
+Check out `E2E_TESTING.md` for more details on the testing setup.
+
+## Deployment
+
+The project includes GitHub Actions workflows for CI/CD. Every push to main triggers automated tests and deployment to Firebase Hosting. See `DEPLOYMENT.md` for production deployment instructions.
+
+```bash
+# Build for production
+cd client && npm run build
+
+# Deploy to Firebase (requires Firebase CLI)
+firebase deploy
+```
 
 ## Project Structure
 
 ```
 SkillSync/
-├── client/                    # React frontend
+├── client/                         # Frontend React app
 │   ├── src/
-│   │   ├── components/       # UI components
-│   │   ├── pages/            # Page components
-│   │   ├── contexts/         # React contexts
-│   │   ├── services/         # Firebase services
-│   │   └── config/           # Firebase config
-│   └── .env                  # Environment variables
-├── PLAN.md                    # Detailed development plan
-├── FIREBASE-SETUP.md          # Firebase setup guide
-└── README.md                  # This file
+│   │   ├── components/            # Reusable UI components
+│   │   ├── pages/                 # Page components
+│   │   ├── contexts/              # React context providers
+│   │   ├── services/              # Firebase and API services
+│   │   ├── utils/                 # Helper functions
+│   │   └── config/                # App configuration
+├── e2e/                           # Playwright E2E tests
+├── functions/                     # Firebase Cloud Functions
+├── .github/workflows/             # CI/CD pipelines
+├── playwright.config.js           # E2E test configuration
+└── firebase.json                  # Firebase project config
 ```
 
-## Development Phases
+## Contributing
 
-See [PLAN.md](PLAN.md) for detailed phase-by-phase implementation guide.
+This is a student project, but if you want to contribute or report issues, feel free to open an issue or pull request.
 
 ## License
 
