@@ -10,6 +10,7 @@ import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import ProjectChatPanel from '../components/ProjectChatPanel'
 import ExportImportMenu from '../components/ExportImportMenu'
 import SuggestionsPanel from '../components/SuggestionsPanel'
+import AIInsightsPanel from '../components/AIInsightsPanel'
 import { mockProjects, mockUsers, mockTasks, getProjectById } from '../data/mockData'
 import { getRoleIcon } from '../constants/roles'
 import { useAuth } from '../contexts/AuthContext'
@@ -417,6 +418,9 @@ const ProjectView = () => {
 
             {/* Right Column - Project Details + New Features */}
             <div className="space-y-6">
+              {/* AI Insights */}
+              <AIInsightsPanel project={{ ...project, tasks: projectTasks }} messages={[]} />
+              
               {/* Synergy Meter */}
               <SynergyMeter team={teamMembers} />
               

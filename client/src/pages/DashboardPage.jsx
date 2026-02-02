@@ -6,6 +6,8 @@ import CommitmentGauge from '../components/CommitmentGauge'
 import CommitmentScoreGauge from '../components/CommitmentScoreGauge'
 import TeamList from '../components/TeamList'
 import AIAssistantCard from '../components/AIAssistantCard'
+import AIRecommendationsCard from '../components/AIRecommendationsCard'
+import AIInsightsPanel from '../components/AIInsightsPanel'
 import RoleContribution from '../components/RoleContribution'
 import ActivityFeed from '../components/ActivityFeed'
 import AdvancedSearch from '../components/AdvancedSearch'
@@ -190,6 +192,9 @@ const DashboardPage = () => {
           <div className="glass-effect rounded-xl p-6">
             <CommitmentScoreGauge userId={user?.uid} showHistory={true} />
           </div>
+
+          {/* AI Recommendations */}
+          <AIRecommendationsCard projects={projects} />
 
           {/* Smart Suggestions */}
           <SuggestionsPanel userId={user?.uid} type="user" />
