@@ -68,7 +68,20 @@ Return ONLY valid JSON in this exact format:
       setStep(2);
     } catch (error) {
       console.error('Error generating project:', error);
-      alert('Failed to generate project. Please try again or create manually.');
+      
+      // More detailed error message
+      let errorMessage = 'Failed to generate project. ';
+      if (error.message?.includes('API key')) {
+        errorMessage += 'Invalid API key. Please check your Gemini API key in .env file.';
+      } else if (error.message?.includes('quota')) {
+        errorMessage += 'API quota exceeded. Try again later.';
+      } else if (error.message?.includes('parse')) {
+        errorMessage += 'AI response format error. Try rephrasing your description.';
+      } else {
+        errorMessage += `Error: ${error.message || 'Unknown error'}. Please try again or create manually.`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
