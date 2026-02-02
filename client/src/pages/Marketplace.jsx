@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import NotificationBell from '../components/NotificationBell'
-import { Search, Plus, Users, Calendar, TrendingUp, Sparkles, SlidersHorizontal } from 'lucide-react'
+import AIProjectWizard from '../components/AIProjectWizard'
+import { Search, Plus, Users, Calendar, TrendingUp, Sparkles, SlidersHorizontal, Wand2 } from 'lucide-react'
 import { mockProjects, calculateDaysRemaining } from '../data/mockData'
 import { ROLE_LIST } from '../constants/roles'
 import { getProjects, searchProjects } from '../services/projectService'
@@ -19,6 +20,7 @@ const Marketplace = () => {
   const [sortBy, setSortBy] = useState('recent') // recent, trending, deadline, name
   const [showFilters, setShowFilters] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showAIWizard, setShowAIWizard] = useState(false)
   const [projects, setProjects] = useState([])
   const [recommendedProjects, setRecommendedProjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -123,11 +125,18 @@ const Marketplace = () => {
             <div className="flex items-center gap-4">
               {/* NotificationBell temporarily disabled - Create Firestore indexes first */}
               <button
+                onClick={() => setShowAIWizard(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-neon-purple to-neon-blue text-white font-semibold rounded-lg hover:opacity-90 transition-all shadow-lg"
+              >
+                <Wand2 size={20} />
+                AI Project Wizard
+              </button>
+              <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-neon-green text-dark font-semibold rounded-lg hover:shadow-neon-green transition-all"
               >
                 <Plus size={20} />
-                Create Project
+                Create Manually
               </button>
             </div>
           </div>
@@ -449,6 +458,14 @@ const CreateProjectModal = ({ onClose, onProjectCreated }) => {
         </form>
       </div>
     </div>
+
+    {/* AI Project Wizard */}
+    <AIProjectWizard
+      isOpen={showAIWizard}
+      onClose={() => setShowAIWizard(false)}
+      onCreate={handleCreateProject}
+    />
+  </div>
   )
 }
 
