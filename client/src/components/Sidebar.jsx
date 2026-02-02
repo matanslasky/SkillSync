@@ -53,7 +53,7 @@ const Sidebar = () => {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in"
           onClick={closeMobileMenu}
         />
       )}
@@ -61,12 +61,12 @@ const Sidebar = () => {
       {/* Sidebar */}
       <aside className={`
         fixed md:static w-64 h-screen bg-dark-light border-r border-gray-800 flex flex-col z-40
-        transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        transition-all duration-300 ease-out shadow-glass
+        ${isMobileMenuOpen ? 'translate-x-0 shadow-card-hover' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
         <div 
-          className="p-6 border-b border-gray-800 cursor-pointer hover:opacity-80 transition-opacity" 
+          className="p-6 border-b border-gray-800 cursor-pointer hover:opacity-80 transition-all duration-200 hover:scale-105" 
           onClick={() => {
             navigate('/dashboard')
             closeMobileMenu()
@@ -80,24 +80,25 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {allNavItems.map((item) => (
+          {allNavItems.map((item, index) => (
             <NavLink
               key={item.path}
               to={item.path}
               onClick={closeMobileMenu}
+              style={{ animationDelay: `${index * 30}ms` }}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 touch-target ${
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 touch-target btn-hover-lift ${
                   isActive
                     ? item.isAdmin
-                      ? 'bg-neon-pink/10 text-neon-pink border border-neon-pink/30'
-                      : 'bg-neon-green/10 text-neon-green border border-neon-green/30'
-                    : 'text-gray-400 hover:bg-dark-lighter hover:text-white'
+                      ? 'bg-neon-pink/10 text-neon-pink border border-neon-pink/30 shadow-neon-pink'
+                      : 'bg-neon-green/10 text-neon-green border border-neon-green/30 shadow-neon-green'
+                    : 'text-gray-400 hover:bg-dark-lighter hover:text-white border border-transparent'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon size={20} className={isActive ? (item.isAdmin ? 'text-neon-pink' : 'text-neon-green') : ''} />
+                  <item.icon size={20} className={`transition-transform duration-200 ${isActive ? (item.isAdmin ? 'text-neon-pink' : 'text-neon-green') : ''}`} />
                   <span className="font-medium">{item.label}</span>
                 </>
               )}
@@ -112,9 +113,9 @@ const Sidebar = () => {
               logout()
               closeMobileMenu()
             }}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-lighter hover:text-neon-pink transition-all duration-200 w-full touch-target"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-lighter hover:text-neon-pink transition-all duration-200 w-full touch-target btn-hover-lift border border-transparent hover:border-neon-pink/30"
           >
-            <LogOut size={20} />
+            <LogOut size={20} className="transition-transform duration-200 group-hover:rotate-12" />
             <span className="font-medium">Logout</span>
           </button>
         </div>

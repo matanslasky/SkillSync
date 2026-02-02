@@ -1,47 +1,53 @@
-// Loading Skeleton Components
+// Loading Skeleton Components with enhanced animations
 
 export const PageLoader = () => (
   <div className="min-h-screen bg-dark flex items-center justify-center">
-    <div className="text-center">
+    <div className="text-center animate-fade-in">
       <div className="inline-block w-16 h-16 border-4 border-neon-green border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-gray-400">Loading...</p>
+      <p className="text-gray-400 animate-pulse">Loading...</p>
     </div>
   </div>
 )
 
 export const CardSkeleton = () => (
-  <div className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse">
-    <div className="flex items-start justify-between mb-4">
-      <div className="h-6 bg-gray-800 rounded w-2/3"></div>
-      <div className="h-6 bg-gray-800 rounded w-16"></div>
-    </div>
-    <div className="space-y-2 mb-4">
-      <div className="h-4 bg-gray-800 rounded w-full"></div>
-      <div className="h-4 bg-gray-800 rounded w-5/6"></div>
-    </div>
-    <div className="space-y-2">
-      <div className="h-4 bg-gray-800 rounded w-24"></div>
-      <div className="h-4 bg-gray-800 rounded w-32"></div>
+  <div className="glass-effect rounded-xl p-6 border border-gray-800 overflow-hidden relative">
+    <div className="absolute inset-0 animate-shimmer"></div>
+    <div className="relative">
+      <div className="flex items-start justify-between mb-4">
+        <div className="h-6 bg-gray-800 rounded w-2/3"></div>
+        <div className="h-6 bg-gray-800 rounded w-16"></div>
+      </div>
+      <div className="space-y-2 mb-4">
+        <div className="h-4 bg-gray-800 rounded w-full"></div>
+        <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-800 rounded w-24"></div>
+        <div className="h-4 bg-gray-800 rounded w-32"></div>
+      </div>
     </div>
   </div>
 )
 
 export const ProjectCardSkeleton = () => (
-  <div className="glass-effect rounded-xl p-6 border border-gray-800 animate-pulse flex flex-col h-full">
-    <div className="flex items-start justify-between mb-4">
-      <div className="h-6 bg-gray-800 rounded w-3/4"></div>
-      <div className="h-6 w-20 bg-gray-800 rounded-full"></div>
+  <div className="glass-effect rounded-xl p-6 border border-gray-800 flex flex-col h-full overflow-hidden relative">
+    <div className="absolute inset-0 animate-shimmer"></div>
+    <div className="relative">
+      <div className="flex items-start justify-between mb-4">
+        <div className="h-6 bg-gray-800 rounded w-3/4"></div>
+        <div className="h-6 w-20 bg-gray-800 rounded-full"></div>
+      </div>
+      <div className="space-y-2 mb-4">
+        <div className="h-4 bg-gray-800 rounded w-full"></div>
+        <div className="h-4 bg-gray-800 rounded w-4/5"></div>
+      </div>
+      <div className="space-y-3 flex-1">
+        <div className="h-4 bg-gray-800 rounded w-28"></div>
+        <div className="h-4 bg-gray-800 rounded w-32"></div>
+        <div className="h-4 bg-gray-800 rounded w-24"></div>
+      </div>
+      <div className="h-10 bg-gray-800 rounded mt-4"></div>
     </div>
-    <div className="space-y-2 mb-4">
-      <div className="h-4 bg-gray-800 rounded w-full"></div>
-      <div className="h-4 bg-gray-800 rounded w-4/5"></div>
-    </div>
-    <div className="space-y-3 flex-1">
-      <div className="h-4 bg-gray-800 rounded w-28"></div>
-      <div className="h-4 bg-gray-800 rounded w-32"></div>
-      <div className="h-4 bg-gray-800 rounded w-24"></div>
-    </div>
-    <div className="h-10 bg-gray-800 rounded mt-4"></div>
   </div>
 )
 

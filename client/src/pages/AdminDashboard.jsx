@@ -498,12 +498,10 @@ const UsersTab = ({ users, selectedUsers, onToggleUser, onUpdateStatus, onUpdate
                 </tr>
               )
             })}
-              </td>
-            </tr>
-          ))}
         </tbody>
       </table>
     </div>
+  </div>
   </div>
 )
 
