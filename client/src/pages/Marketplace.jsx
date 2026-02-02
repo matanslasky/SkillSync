@@ -249,6 +249,32 @@ const Marketplace = () => {
             }}
           />
         )}
+
+        {/* AI Project Wizard */}
+        <AIProjectWizard
+          isOpen={showAIWizard}
+          onClose={() => setShowAIWizard(false)}
+          onCreate={(projectData) => {
+            // Handle AI-generated project creation
+            const newProject = {
+              ...projectData,
+              id: Date.now().toString(),
+              creatorId: user?.uid || 'unknown',
+              creatorName: user?.name || 'Anonymous',
+              teamMembers: [user?.uid || 'unknown'],
+              team: [{
+                id: user?.uid || 'unknown',
+                name: user?.name || 'Anonymous',
+                role: user?.role || 'Creator'
+              }],
+              progress: 0,
+              deadline: new Date(Date.now() + (projectData.timelineWeeks || 12) * 7 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'active'
+            }
+            setProjects([newProject, ...projects])
+            setUseMockData(false)
+          }}
+        />
       </main>
     </div>
   )
@@ -458,14 +484,6 @@ const CreateProjectModal = ({ onClose, onProjectCreated }) => {
         </form>
       </div>
     </div>
-
-    {/* AI Project Wizard */}
-    <AIProjectWizard
-      isOpen={showAIWizard}
-      onClose={() => setShowAIWizard(false)}
-      onCreate={handleCreateProject}
-    />
-  </div>
   )
 }
 
