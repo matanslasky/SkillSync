@@ -10,11 +10,15 @@ SkillSync is a team collaboration platform that brings talented individuals toge
 
 ## ✨ Key Features
 
+- **🤖 AI-Powered Recommendations** - Gemini AI suggests perfect projects based on your skills
+- **🧙 AI Project Wizard** - Create complete projects from natural language descriptions
+- **🎯 Smart Task Assignment** - AI recommends the best team member for each task
+- **📊 Sentiment Analysis** - Monitor team health and collaboration quality
 - **🔍 Smart Marketplace** - Discover projects that match your skills and interests
 - **👥 Team Building** - Send invitations, manage join requests, and build your dream team
 - **📋 Kanban Boards** - Visual task management with drag-and-drop functionality
 - **💬 Built-in Messaging** - Communicate seamlessly with team members
-- **📊 Commitment Scores** - Track team member reliability and engagement
+- **📈 Commitment Scores** - Track team member reliability and engagement
 - **🤝 Synergy Meter** - Monitor team compatibility and collaboration effectiveness
 - **🔔 Real-time Notifications** - Stay updated on project activities
 - **🎨 Modern UI/UX** - Polished interface with smooth animations and dark mode
@@ -44,6 +48,7 @@ SkillSync is a team collaboration platform that brings talented individuals toge
 - **Firebase Cloud Storage** - File and image storage
 - **Firebase Hosting** - Global CDN with SSL
 - **Firebase Cloud Functions** - Serverless backend logic
+- **Google Gemini AI** - Intelligent features and recommendations
 
 ### DevOps & Testing
 - **GitHub Actions** - CI/CD pipeline with automated deployments
@@ -94,6 +99,26 @@ See [FIREBASE-SETUP.md](FIREBASE-SETUP.md) for detailed instructions.
 
 Copy the example environment file:
 ```bash
+cd client
+cp .env.example .env
+```
+
+Add your Firebase and Gemini AI credentials to `client/.env`:
+```env
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Google Gemini AI (Optional - enables AI features)
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+**Get your Gemini API key (free):** https://ai.google.dev/
+```bash
 cp client/.env.example client/.env.development
 ```
 
@@ -118,6 +143,7 @@ Visit **http://localhost:5173** 🎉
 ## 📖 Documentation
 
 - **[User Guide](USER_GUIDE.md)** - Complete guide for end users
+- **[AI Features Guide](docs/AI_FEATURES.md)** - AI capabilities and setup
 - **[API Documentation](docs/API_DOCUMENTATION.md)** - Developer API reference
 - **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute
@@ -296,10 +322,11 @@ Looking for a place to start? Check out issues labeled:
 
 ## 📊 Project Stats
 
-- **Lines of Code**: ~15,000+
-- **Components**: 40+
-- **Services**: 12
+- **Lines of Code**: ~18,000+
+- **Components**: 45+
+- **Services**: 15
 - **E2E Tests**: 92
+- **AI Features**: 6
 - **Development Time**: 6+ months
 - **Contributors**: Open to all!
 
@@ -314,9 +341,13 @@ Looking for a place to start? Check out issues labeled:
 - ✅ Commitment scoring
 - ✅ Marketplace for discovering projects
 - ✅ Comprehensive E2E testing
+- ✅ **AI-powered team matching (NEW!)**
+- ✅ **AI project wizard (NEW!)**
+- ✅ **Smart task assignment (NEW!)**
+- ✅ **Team sentiment analysis (NEW!)**
 
 ### Upcoming Features (v1.1+)
-- 🔄 AI-powered team matching
+- 🔄 Semantic search implementation
 - 🔄 Video conferencing integration
 - 🔄 Advanced analytics dashboard
 - 🔄 Mobile app (React Native)
