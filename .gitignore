@@ -48,8 +48,9 @@ Thumbs.db
 # MongoDB
 data/
 
-# Internal Documentation
+# Internal Documentation (exclude working docs, keep official docs)
+PHASE_*.md
 SERVER_CALLS_EXPLAINED.md
-# Documentation (keep only README.md)
-*.md
-!README.md
+IMPROVEMENTS.md
+MANUAL_TASKS_GUIDE.md
+YOUR_SETUP_STATUS.md
