@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - heading "SkillSync" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Join the Revolution
+  - main [ref=e8]:
+    - heading "Create Account" [level=2] [ref=e9]
+    - form "Create Account" [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Full Name
+        - generic [ref=e13]:
+          - img [ref=e14]
+          - textbox "Full name" [ref=e17]:
+            - /placeholder: John Doe
+      - generic [ref=e18]:
+        - generic [ref=e19]: Email
+        - generic [ref=e20]:
+          - img [ref=e21]
+          - textbox "Email address" [ref=e24]:
+            - /placeholder: you@example.com
+      - generic [ref=e25]:
+        - generic [ref=e26]: Password
+        - generic [ref=e27]:
+          - img [ref=e28]
+          - textbox "Password (minimum 8 characters with uppercase, lowercase, and number)" [ref=e31]:
+            - /placeholder: ••••••••
+          - button "Hide password" [active] [pressed] [ref=e32] [cursor=pointer]:
+            - img [ref=e33]
+        - paragraph [ref=e38]: Min 8 characters with uppercase, lowercase, and number
+      - generic [ref=e39]:
+        - generic [ref=e40]: Confirm Password
+        - generic [ref=e41]:
+          - img [ref=e42]
+          - textbox "Confirm password" [ref=e45]:
+            - /placeholder: ••••••••
+          - button "Show confirm password" [ref=e46] [cursor=pointer]:
+            - img [ref=e47]
+      - generic [ref=e50]:
+        - generic [ref=e51]: Role
+        - generic [ref=e52]:
+          - img [ref=e53]
+          - combobox "Select your role" [ref=e56]:
+            - option "💻 Developer" [selected]
+            - option "🎨 Designer"
+            - option "📊 Product Manager"
+            - option "📈 Growth Lead"
+            - option "⚖️ Legal Consultant"
+            - option "🔍 User Researcher"
+            - option "✍️ Content Strategist"
+      - button "Create account" [ref=e57] [cursor=pointer]: Create Account
+    - generic [ref=e58]:
+      - text: Already have an account?
+      - link "Sign in" [ref=e59] [cursor=pointer]:
+        - /url: /login
+```
