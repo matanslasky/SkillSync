@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { pushNotificationService } from './pushNotificationService'
+import { reportError } from './errorReporting'
 
 /**
  * Notification types
@@ -60,7 +61,11 @@ export const createNotification = async (notificationData, userPreferences = nul
     
     return docRef.id
   } catch (error) {
-    console.error('Error creating notification:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'createNotification',
+      data: { recipientId: notificationData.recipientId, type: notificationData.type },
+    })
     throw error
   }
 }
@@ -86,7 +91,11 @@ export const getUserNotifications = async (userId, limitCount = 50) => {
       ...doc.data()
     }))
   } catch (error) {
-    console.error('Error fetching notifications:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'getUserNotifications',
+      data: { userId, limitCount },
+    })
     return []
   }
 }
@@ -107,7 +116,11 @@ export const getUnreadCount = async (userId) => {
     const snapshot = await getDocs(q)
     return snapshot.docs.length
   } catch (error) {
-    console.error('Error fetching unread count:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'getUnreadCount',
+      data: { userId },
+    })
     return 0
   }
 }
@@ -125,7 +138,11 @@ export const markAsRead = async (notificationId) => {
       readAt: Timestamp.now()
     })
   } catch (error) {
-    console.error('Error marking notification as read:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'markAsRead',
+      data: { notificationId },
+    })
     throw error
   }
 }
@@ -155,7 +172,11 @@ export const markAllAsRead = async (userId) => {
     
     await batch.commit()
   } catch (error) {
-    console.error('Error marking all as read:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'markAllAsRead',
+      data: { userId },
+    })
     throw error
   }
 }
@@ -181,7 +202,11 @@ export const subscribeToNotifications = (userId, callback) => {
     }))
     callback(notifications)
   }, (error) => {
-    console.error('Error subscribing to notifications:', error)
+    reportError(error, {
+      service: 'notificationService',
+      operation: 'subscribeToNotifications',
+      data: { userId },
+    })
     // If index error, provide instructions
     if (error.code === 'failed-precondition' || error.message?.includes('index')) {
       console.warn('⚠️  Firestore Index Required')

@@ -10,6 +10,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { reportError } from './errorReporting'
 
 // Get a single user profile by ID
 export const getUserProfile = async (userId) => {
@@ -22,7 +23,11 @@ export const getUserProfile = async (userId) => {
       throw new Error('User not found')
     }
   } catch (error) {
-    console.error('Error fetching user profile:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'getUserProfile',
+      data: { userId },
+    })
     throw error
   }
 }
@@ -41,7 +46,11 @@ export const getUserProfiles = async (userIds) => {
     
     return profiles
   } catch (error) {
-    console.error('Error fetching user profiles:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'getUserProfiles',
+      data: { userIdsCount: userIds.length },
+    })
     throw error
   }
 }
@@ -73,7 +82,11 @@ export const getAllUsers = async (filters = {}) => {
     
     return users
   } catch (error) {
-    console.error('Error fetching all users:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'getAllUsers',
+      data: { role: filters.role },
+    })
     throw error
   }
 }
@@ -90,7 +103,11 @@ export const updateUserProfile = async (userId, updates) => {
     
     return { uid: userId, ...updates }
   } catch (error) {
-    console.error('Error updating user profile:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'updateUserProfile',
+      data: { userId },
+    })
     throw error
   }
 }
@@ -107,7 +124,11 @@ export const updateProfilePicture = async (userId, photoURL) => {
     
     return { success: true, photoURL }
   } catch (error) {
-    console.error('Error updating profile picture:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'updateProfilePicture',
+      data: { userId },
+    })
     throw error
   }
 }
@@ -128,7 +149,11 @@ export const searchUsers = async (searchTerm) => {
     
     return filtered
   } catch (error) {
-    console.error('Error searching users:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'searchUsers',
+      data: { searchTerm },
+    })
     throw error
   }
 }
@@ -151,7 +176,11 @@ export const getUsersByRole = async (role) => {
     
     return users
   } catch (error) {
-    console.error('Error fetching users by role:', error)
+    reportError(error, {
+      service: 'userService',
+      operation: 'getUsersByRole',
+      data: { role },
+    })
     throw error
   }
 }

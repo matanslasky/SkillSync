@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { reportError } from './errorReporting';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
@@ -120,7 +121,11 @@ Return ONLY valid JSON in this exact format:
       };
     });
   } catch (error) {
-    console.error('Error calculating team match:', error);
+    reportError(error, {
+      service: 'aiService',
+      operation: 'calculateTeamMatchScore',
+      data: { userSkillsCount: userSkills?.length, projectSkillsCount: projectSkills?.length },
+    });
     return {
       matchScore: 0,
       strengths: [],
@@ -186,7 +191,11 @@ Analyze and recommend the best person for this task. Return ONLY valid JSON:
       return JSON.parse(jsonMatch[0]);
     });
   } catch (error) {
-    console.error('Error suggesting task assignment:', error);
+    reportError(error, {
+      service: 'aiService',
+      operation: 'suggestTaskAssignment',
+      data: { taskTitle: task?.title, teamSize: teamMembers?.length },
+    });
     return {
       recommendedMemberId: null,
       confidence: 0,
@@ -250,7 +259,11 @@ Analyze the overall team sentiment and dynamics. Return ONLY valid JSON:
       return JSON.parse(jsonMatch[0]);
     });
   } catch (error) {
-    console.error('Error analyzing sentiment:', error);
+    reportError(error, {
+      service: 'aiService',
+      operation: 'analyzeTeamSentiment',
+      data: { messageCount: messages?.length },
+    });
     return {
       overallSentiment: 'neutral',
       score: 50,
@@ -297,7 +310,11 @@ export const generateProjectRecommendations = async (user, availableProjects) =>
       return scoredProjects.sort((a, b) => b.aiMatchScore - a.aiMatchScore);
     });
   } catch (error) {
-    console.error('Error generating recommendations:', error);
+    reportError(error, {
+      service: 'aiService',
+      operation: 'generateProjectRecommendations',
+      data: { userSkillsCount: userSkills?.length, projectCount: availableProjects?.length },
+    });
     return availableProjects; // Return original list on error
   }
 };
@@ -337,7 +354,11 @@ Be positive, specific, and actionable. Return only the summary text, no JSON.`;
       return response.text().trim();
     });
   } catch (error) {
-    console.error('Error generating progress report:', error);
+    reportError(error, {
+      service: 'aiService',
+      operation: 'generateProgressReport',
+      data: { projectId: project?.id, taskCount: project.tasks?.length },
+    });
     return `Progress: ${project.tasks?.filter(t => t.status === 'completed').length || 0} of ${project.tasks?.length || 0} tasks completed.`;
   }
 };

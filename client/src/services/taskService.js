@@ -12,6 +12,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { reportError } from './errorReporting'
 
 /**
  * Task status types
@@ -52,7 +53,11 @@ export const createTask = async (taskData) => {
     const taskRef = await addDoc(collection(db, 'tasks'), task)
     return { id: taskRef.id, ...task }
   } catch (error) {
-    console.error('Error creating task:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'createTask',
+      data: { projectId: taskData.projectId, assigneeId: taskData.assigneeId },
+    })
     throw error
   }
 }
@@ -73,7 +78,11 @@ export const getTask = async (taskId) => {
       throw new Error('Task not found')
     }
   } catch (error) {
-    console.error('Error fetching task:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'getTask',
+      data: { taskId },
+    })
     throw error
   }
 }
@@ -97,7 +106,11 @@ export const getProjectTasks = async (projectId) => {
       ...doc.data()
     }))
   } catch (error) {
-    console.error('Error fetching project tasks:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'getProjectTasks',
+      data: { projectId },
+    })
     return []
   }
 }
@@ -121,7 +134,11 @@ export const getUserTasks = async (userId) => {
       ...doc.data()
     }))
   } catch (error) {
-    console.error('Error fetching user tasks:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'getUserTasks',
+      data: { userId },
+    })
     return []
   }
 }
@@ -152,7 +169,11 @@ export const updateTask = async (taskId, updates) => {
     const updatedTask = await getTask(taskId)
     return updatedTask
   } catch (error) {
-    console.error('Error updating task:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'updateTask',
+      data: { taskId, status: updates.status },
+    })
     throw error
   }
 }
@@ -167,7 +188,11 @@ export const deleteTask = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId)
     await deleteDoc(taskRef)
   } catch (error) {
-    console.error('Error deleting task:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'deleteTask',
+      data: { taskId },
+    })
     throw error
   }
 }
@@ -182,7 +207,11 @@ export const moveTask = async (taskId, newStatus) => {
   try {
     return await updateTask(taskId, { status: newStatus })
   } catch (error) {
-    console.error('Error moving task:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'moveTask',
+      data: { taskId, newStatus },
+    })
     throw error
   }
 }
@@ -211,7 +240,11 @@ export const getTasksByStatus = async (projectId) => {
 
     return grouped
   } catch (error) {
-    console.error('Error grouping tasks by status:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'getTasksByStatus',
+      data: { projectId },
+    })
     return {
       [TASK_STATUS.TODO]: [],
       [TASK_STATUS.IN_PROGRESS]: [],
@@ -235,7 +268,11 @@ export const calculateCompletionRate = async (userId) => {
     const completedTasks = tasks.filter(task => task.status === TASK_STATUS.COMPLETED)
     return Math.round((completedTasks.length / tasks.length) * 100)
   } catch (error) {
-    console.error('Error calculating completion rate:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'calculateCompletionRate',
+      data: { userId },
+    })
     return 0
   }
 }
@@ -264,7 +301,11 @@ export const calculateOnTimeRate = async (userId) => {
 
     return Math.round((onTimeTasks.length / completedTasks.length) * 100)
   } catch (error) {
-    console.error('Error calculating on-time rate:', error)
+    reportError(error, {
+      service: 'taskService',
+      operation: 'calculateOnTimeRate',
+      data: { userId },
+    })
     return 0
   }
 }

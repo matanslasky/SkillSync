@@ -16,6 +16,7 @@ import {
 import { db } from '../config/firebase'
 import socketService from './socketService'
 import logger from '../utils/logger'
+import { reportError } from './errorReporting'
 
 // Create or get a conversation between two users
 export const getOrCreateConversation = async (currentUserId, otherUserId) => {
@@ -57,7 +58,11 @@ export const sendMessage = async (conversationId, senderId, text) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error sending message:', error)
+    reportError(error, {
+      service: 'messageService',
+      operation: 'sendMessage',
+      data: { conversationId, senderId },
+    })
     throw error
   }
 }
@@ -114,7 +119,11 @@ export const markMessagesAsRead = async (conversationId, userId) => {
     
     await Promise.all(updatePromises)
   } catch (error) {
-    console.error('Error marking messages as read:', error)
+    reportError(error, {
+      service: 'messageService',
+      operation: 'markMessagesAsRead',
+      data: { conversationId, userId },
+    })
   }
 }
 
@@ -127,7 +136,11 @@ export const getUserInfo = async (userId) => {
     }
     return null
   } catch (error) {
-    console.error('Error getting user info:', error)
+    reportError(error, {
+      service: 'messageService',
+      operation: 'getUserInfo',
+      data: { userId },
+    })
     return null
   }
 }

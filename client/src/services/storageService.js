@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '../config/firebase'
+import { reportError } from './errorReporting'
 
 // Upload profile picture
 export const uploadProfilePicture = async (userId, file) => {
@@ -17,7 +18,11 @@ export const uploadProfilePicture = async (userId, file) => {
     
     return { success: true, url: downloadURL, path: snapshot.ref.fullPath }
   } catch (error) {
-    console.error('Error uploading profile picture:', error)
+    reportError(error, {
+      service: 'storageService',
+      operation: 'uploadProfilePicture',
+      data: { userId, fileName: file.name },
+    })
     throw error
   }
 }
@@ -34,7 +39,11 @@ export const uploadProjectImage = async (projectId, file) => {
     
     return { success: true, url: downloadURL, path: snapshot.ref.fullPath }
   } catch (error) {
-    console.error('Error uploading project image:', error)
+    reportError(error, {
+      service: 'storageService',
+      operation: 'uploadProjectImage',
+      data: { projectId, fileName: file.name },
+    })
     throw error
   }
 }
@@ -58,7 +67,11 @@ export const uploadMessageAttachment = async (conversationId, file) => {
       fileSize: file.size
     }
   } catch (error) {
-    console.error('Error uploading attachment:', error)
+    reportError(error, {
+      service: 'storageService',
+      operation: 'uploadMessageAttachment',
+      data: { conversationId, fileName: file.name },
+    })
     throw error
   }
 }
@@ -81,7 +94,11 @@ export const uploadDeliverable = async (projectId, milestoneId, file) => {
       fileType: file.type
     }
   } catch (error) {
-    console.error('Error uploading deliverable:', error)
+    reportError(error, {
+      service: 'storageService',
+      operation: 'uploadDeliverable',
+      data: { projectId, milestoneId, fileName: file.name },
+    })
     throw error
   }
 }
@@ -93,7 +110,11 @@ export const deleteFile = async (filePath) => {
     await deleteObject(fileRef)
     return { success: true }
   } catch (error) {
-    console.error('Error deleting file:', error)
+    reportError(error, {
+      service: 'storageService',
+      operation: 'deleteFile',
+      data: { filePath },
+    })
     throw error
   }
 }

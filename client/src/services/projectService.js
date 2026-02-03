@@ -15,6 +15,7 @@ import {
   arrayRemove
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { reportError } from './errorReporting'
 
 // Create a new project
 export const createProject = async (projectData) => {
@@ -31,7 +32,11 @@ export const createProject = async (projectData) => {
     
     return { id: projectRef.id, ...projectData }
   } catch (error) {
-    console.error('Error creating project:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'createProject',
+      data: { projectTitle: projectData?.title },
+    })
     throw error
   }
 }
@@ -47,7 +52,11 @@ export const getProject = async (projectId) => {
       throw new Error('Project not found')
     }
   } catch (error) {
-    console.error('Error fetching project:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'getProject',
+      data: { projectId },
+    })
     throw error
   }
 }
@@ -92,7 +101,11 @@ export const getProjects = async (filters = {}) => {
     
     return projects
   } catch (error) {
-    console.error('Error fetching projects:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'getProjects',
+      data: { filters },
+    })
     throw error
   }
 }
@@ -115,7 +128,11 @@ export const getUserProjects = async (userId) => {
     
     return projects
   } catch (error) {
-    console.error('Error fetching user projects:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'getUserProjects',
+      data: { userId },
+    })
     throw error
   }
 }
@@ -132,7 +149,11 @@ export const updateProject = async (projectId, updates) => {
     
     return { id: projectId, ...updates }
   } catch (error) {
-    console.error('Error updating project:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'updateProject',
+      data: { projectId },
+    })
     throw error
   }
 }
@@ -143,7 +164,11 @@ export const deleteProject = async (projectId) => {
     await deleteDoc(doc(db, 'projects', projectId))
     return { success: true }
   } catch (error) {
-    console.error('Error deleting project:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'deleteProject',
+      data: { projectId },
+    })
     throw error
   }
 }
@@ -160,7 +185,11 @@ export const addTeamMember = async (projectId, userId) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error adding team member:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'addTeamMember',
+      data: { projectId, userId },
+    })
     throw error
   }
 }
@@ -177,7 +206,11 @@ export const removeTeamMember = async (projectId, userId) => {
     
     return { success: true }
   } catch (error) {
-    console.error('Error removing team member:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'removeTeamMember',
+      data: { projectId, userId },
+    })
     throw error
   }
 }
@@ -198,7 +231,11 @@ export const searchProjects = async (searchTerm) => {
     
     return filtered
   } catch (error) {
-    console.error('Error searching projects:', error)
+    reportError(error, {
+      service: 'projectService',
+      operation: 'searchProjects',
+      data: { searchTerm },
+    })
     throw error
   }
 }
