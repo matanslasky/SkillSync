@@ -19,7 +19,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
  */
 const getModel = (config = {}) => {
   return genAI.getGenerativeModel({
-    model: 'gemini-pro',
+    model: 'gemini-1.5-flash-latest',
     generationConfig: {
       temperature: 0.7,
       topK: 40,
