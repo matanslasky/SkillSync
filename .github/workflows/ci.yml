@@ -1,10 +1,12 @@
 name: CI - Test and Lint
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  # Disabled automatic runs until tests are set up
+  workflow_dispatch:
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
 
 jobs:
   test-client:
