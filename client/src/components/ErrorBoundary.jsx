@@ -18,8 +18,21 @@ class ErrorBoundary extends Component {
       errorInfo
     })
 
-    // TODO: Send to error tracking service (e.g., Sentry)
-    // logErrorToService(error, errorInfo)
+    // Send to Sentry error tracking
+    if (import.meta.env.VITE_ENABLE_ERROR_TRACKING === 'true') {
+      import('../services/errorTracking').then(({ captureException }) => {
+        captureException(error, {
+          contexts: {
+            react: {
+              componentStack: errorInfo.componentStack
+            }
+          },
+          tags: {
+            errorBoundary: true
+          }
+        })
+      })
+    }
   }
 
   handleReset = () => {
