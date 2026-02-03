@@ -3,7 +3,9 @@ import { X, Wand2, Loader2, Sparkles, CheckCircle } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { isAIConfigured } from '../services/aiService';
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '', {
+  baseUrl: 'https://generativelanguage.googleapis.com/v1'
+});
 
 const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
   const [step, setStep] = useState(1); // 1: Input, 2: Generated, 3: Review
