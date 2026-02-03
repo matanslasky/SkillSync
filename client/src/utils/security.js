@@ -4,7 +4,7 @@
  */
 
 import { env } from '../config/env';
-import { logger } from './logger';
+import logger from './logger';
 
 /**
  * Content Security Policy configuration

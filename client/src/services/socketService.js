@@ -1,4 +1,6 @@
-import { io } from 'socket.io-client'
+// Socket.io-client removed - server is Firebase-only now
+// If real-time features needed, use Firebase Realtime Database or Firestore onSnapshot
+// import { io } from 'socket.io-client'
 import logger from '../utils/logger'
 
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
@@ -8,6 +10,7 @@ class SocketService {
     this.socket = null
     this.isConnected = false
     this.listeners = new Map()
+    logger.debug('SocketService: Server removed, using Firebase-only architecture')
   }
 
   /**

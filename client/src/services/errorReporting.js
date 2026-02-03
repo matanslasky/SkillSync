@@ -4,7 +4,7 @@
  */
 
 import { captureException, captureMessage } from './errorTracking';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 /**
  * Reports an error to monitoring services

@@ -5,7 +5,7 @@
 
 import * as Sentry from '@sentry/react';
 import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 let isInitialized = false;
 

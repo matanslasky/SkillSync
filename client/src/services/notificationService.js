@@ -16,7 +16,7 @@ import {
 import { db } from '../config/firebase'
 import { pushNotificationService } from './pushNotificationService'
 import { reportError } from './errorReporting'
-import { logger } from '../utils/logger'
+import logger from '../utils/logger'
 
 /**
  * Notification types
