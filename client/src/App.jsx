@@ -6,7 +6,6 @@ import { ToastProvider } from './components/ui/Toast'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoadingSkeletons from './components/LoadingSkeletons'
-import DebugEnv from './components/DebugEnv'
 
 // Eager load critical pages
 import Login from './pages/Login'
@@ -41,7 +40,6 @@ function App() {
         <ToastProvider>
           <Router>
             <AuthProvider>
-              <DebugEnv />
               <Suspense fallback={<LoadingSkeletons.PageLoader />}>
                 <Routes>
                   <Route path="/login" element={<Login />} />
