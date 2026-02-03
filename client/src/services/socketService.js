@@ -17,7 +17,7 @@ class SocketService {
   connect(userId) {
     // Skip socket connection if no backend server is configured
     if (!SOCKET_URL || SOCKET_URL.includes('localhost:5000')) {
-      console.log('Socket.io server not available - running in Firebase-only mode')
+      logger.info('Socket.io server not available - running in Firebase-only mode')
       return
     }
 
@@ -49,7 +49,7 @@ class SocketService {
 
       this.socket.on('connect_error', (error) => {
         // Don't spam errors if backend is not available
-        console.log('Socket connection unavailable - continuing without real-time features')
+        logger.info('Socket connection unavailable - continuing without real-time features')
       })
 
       this.socket.on('reconnect', (attemptNumber) => {
@@ -57,7 +57,7 @@ class SocketService {
       })
 
     } catch (error) {
-      console.log('Socket service disabled - no backend server')
+      logger.info('Socket service disabled - no backend server')
     }
   }
 

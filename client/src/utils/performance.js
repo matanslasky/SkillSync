@@ -4,6 +4,8 @@
  * Provides tools to measure and track application performance.
  */
 
+import { logger } from './logger';
+
 /**
  * Measure component render time
  * Usage: const stopTimer = measureRender('ComponentName');
@@ -18,9 +20,9 @@ export const measureRender = (componentName) => {
     const duration = endTime - startTime;
     
     if (duration > 16.67) { // Longer than one frame (60fps)
-      console.warn(`⚠️ Slow render: ${componentName} took ${duration.toFixed(2)}ms`);
+      logger.warn(`Slow render: ${componentName} took ${duration.toFixed(2)}ms`);
     } else {
-      console.log(`✅ ${componentName} rendered in ${duration.toFixed(2)}ms`);
+      logger.debug(`${componentName} rendered in ${duration.toFixed(2)}ms`);
     }
     
     return duration;
@@ -39,16 +41,16 @@ export const measureApiCall = async (apiName, apiFunction) => {
     const duration = endTime - startTime;
     
     if (duration > 1000) {
-      console.warn(`⚠️ Slow API call: ${apiName} took ${duration.toFixed(2)}ms`);
+      logger.warn(`Slow API call: ${apiName} took ${duration.toFixed(2)}ms`);
     } else {
-      console.log(`✅ API call: ${apiName} completed in ${duration.toFixed(2)}ms`);
+      logger.debug(`API call: ${apiName} completed in ${duration.toFixed(2)}ms`);
     }
     
     return result;
   } catch (error) {
     const endTime = performance.now();
     const duration = endTime - startTime;
-    console.error(`❌ API call failed: ${apiName} after ${duration.toFixed(2)}ms`, error);
+    logger.error(`API call failed: ${apiName} after ${duration.toFixed(2)}ms`, error);
     throw error;
   }
 };
@@ -62,13 +64,13 @@ export const trackPageLoad = (pageName) => {
     const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
     const domReadyTime = perfData.domContentLoadedEventEnd - perfData.navigationStart;
     
-    console.log(`📊 Page Load Metrics for ${pageName}:`);
-    console.log(`  - Total Load Time: ${pageLoadTime}ms`);
-    console.log(`  - DOM Ready: ${domReadyTime}ms`);
+    logger.info(`Page Load Metrics for ${pageName}:`);
+    logger.info(`  - Total Load Time: ${pageLoadTime}ms`);
+    logger.info(`  - DOM Ready: ${domReadyTime}ms`);
     
     // Log warning if page load is slow
     if (pageLoadTime > 3000) {
-      console.warn(`⚠️ Slow page load detected: ${pageLoadTime}ms`);
+      logger.warn(`Slow page load detected: ${pageLoadTime}ms`);
     }
   }
 };
@@ -106,13 +108,13 @@ export const measureBundleSize = () => {
       }
     });
     
-    console.log('📦 Bundle Size Analysis:');
-    console.log(`  - JavaScript: ${(bundleStats.js / 1024).toFixed(2)} KB`);
-    console.log(`  - CSS: ${(bundleStats.css / 1024).toFixed(2)} KB`);
-    console.log(`  - Images: ${(bundleStats.images / 1024).toFixed(2)} KB`);
-    console.log(`  - Fonts: ${(bundleStats.fonts / 1024).toFixed(2)} KB`);
-    console.log(`  - Other: ${(bundleStats.other / 1024).toFixed(2)} KB`);
-    console.log(`  - Total: ${(totalSize / 1024).toFixed(2)} KB`);
+    logger.info('Bundle Size Analysis:');
+    logger.info(`  - JavaScript: ${(bundleStats.js / 1024).toFixed(2)} KB`);
+    logger.info(`  - CSS: ${(bundleStats.css / 1024).toFixed(2)} KB`);
+    logger.info(`  - Images: ${(bundleStats.images / 1024).toFixed(2)} KB`);
+    logger.info(`  - Fonts: ${(bundleStats.fonts / 1024).toFixed(2)} KB`);
+    logger.info(`  - Other: ${(bundleStats.other / 1024).toFixed(2)} KB`);
+    logger.info(`  - Total: ${(totalSize / 1024).toFixed(2)} KB`);
     
     return bundleStats;
   }
@@ -130,14 +132,14 @@ export const checkMemoryUsage = () => {
     const totalMB = (memory.totalJSHeapSize / 1024 / 1024).toFixed(2);
     const limitMB = (memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2);
     
-    console.log('💾 Memory Usage:');
-    console.log(`  - Used: ${usedMB} MB`);
-    console.log(`  - Total: ${totalMB} MB`);
-    console.log(`  - Limit: ${limitMB} MB`);
+    logger.info('Memory Usage:');
+    logger.info(`  - Used: ${usedMB} MB`);
+    logger.info(`  - Total: ${totalMB} MB`);
+    logger.info(`  - Limit: ${limitMB} MB`);
     
     const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
     if (usagePercent > 80) {
-      console.warn(`⚠️ High memory usage detected: ${usagePercent.toFixed(2)}%`);
+      logger.warn(`High memory usage detected: ${usagePercent.toFixed(2)}%`);
     }
     
     return {
@@ -148,7 +150,7 @@ export const checkMemoryUsage = () => {
     };
   }
   
-  console.warn('Memory API not available in this browser');
+  logger.warn('Memory API not available in this browser');
   return null;
 };
 
@@ -160,7 +162,7 @@ export const observeLongTasks = () => {
     try {
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          console.warn(`⚠️ Long task detected: ${entry.duration.toFixed(2)}ms`);
+          logger.warn(`Long task detected: ${entry.duration.toFixed(2)}ms`);
         }
       });
       
@@ -168,7 +170,7 @@ export const observeLongTasks = () => {
       
       return () => observer.disconnect();
     } catch (e) {
-      console.warn('Long task observation not supported');
+      logger.warn('Long task observation not supported');
     }
   }
   
@@ -196,7 +198,7 @@ export const trackWebVitals = (callback) => {
       try {
         observer.observe({ entryTypes: ['largest-contentful-paint'] });
       } catch (e) {
-        console.warn('LCP observation not supported');
+        logger.warn('LCP observation not supported');
       }
     };
     
@@ -218,7 +220,7 @@ export const trackWebVitals = (callback) => {
       try {
         observer.observe({ entryTypes: ['first-input'] });
       } catch (e) {
-        console.warn('FID observation not supported');
+        logger.warn('FID observation not supported');
       }
     };
     
@@ -243,7 +245,7 @@ export const trackWebVitals = (callback) => {
       try {
         observer.observe({ entryTypes: ['layout-shift'] });
       } catch (e) {
-        console.warn('CLS observation not supported');
+        logger.warn('CLS observation not supported');
       }
     };
     
