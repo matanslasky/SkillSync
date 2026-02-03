@@ -17,7 +17,7 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
     try {
       // Use fetch directly with v1 API endpoint (not v1beta)
       const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
       const prompt = `You are a project planning assistant. Convert this natural language description into a structured project plan.
 
