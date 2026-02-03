@@ -4,6 +4,7 @@
  */
 
 import { env } from '../config/env';
+import { logger } from './logger';
 
 /**
  * Content Security Policy configuration
@@ -91,7 +92,7 @@ export const SECURITY_HEADERS = {
  */
 export function applySecurityHeaders() {
   if (!env.isProduction) {
-    console.log('Security headers skipped in development');
+    logger.debug('Security headers skipped in development');
     return;
   }
 

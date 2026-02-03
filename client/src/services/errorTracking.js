@@ -5,6 +5,7 @@
 
 import * as Sentry from '@sentry/react';
 import { env } from '../config/env';
+import { logger } from '../utils/logger';
 
 let isInitialized = false;
 
@@ -13,7 +14,7 @@ let isInitialized = false;
  */
 export function initErrorTracking() {
   if (!env.enableErrorTracking || !env.sentryDsn || isInitialized) {
-    console.log('Error tracking disabled or already initialized');
+    logger.debug('Error tracking disabled or already initialized');
     return;
   }
 
@@ -67,7 +68,7 @@ export function initErrorTracking() {
     });
 
     isInitialized = true;
-    console.log('✅ Error tracking initialized');
+    logger.debug('✅ Error tracking initialized');
   } catch (error) {
     console.error('Failed to initialize error tracking:', error);
   }

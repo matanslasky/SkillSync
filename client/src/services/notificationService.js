@@ -16,6 +16,7 @@ import {
 import { db } from '../config/firebase'
 import { pushNotificationService } from './pushNotificationService'
 import { reportError } from './errorReporting'
+import { logger } from '../utils/logger'
 
 /**
  * Notification types
@@ -209,9 +210,9 @@ export const subscribeToNotifications = (userId, callback) => {
     })
     // If index error, provide instructions
     if (error.code === 'failed-precondition' || error.message?.includes('index')) {
-      console.warn('⚠️  Firestore Index Required')
-      console.warn('Create the index by clicking the link above, or notifications will be disabled.')
-      console.warn('This is a one-time setup. After creating the index, refresh the page.')
+      logger.warn('⚠️  Firestore Index Required')
+      logger.warn('Create the index by clicking the link above, or notifications will be disabled.')
+      logger.warn('This is a one-time setup. After creating the index, refresh the page.')
     }
     // Call callback with empty array so UI doesn't break
     callback([])

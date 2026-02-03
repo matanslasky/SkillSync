@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from '../utils/logger';
+import { reportError } from './errorReporting';
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
 
@@ -61,7 +63,7 @@ Return the JSON array:`;
     // Extract JSON array from response
     const jsonMatch = text.match(/\[[\s\S]*?\]/);
     if (!jsonMatch) {
-      console.warn('Could not parse AI response, returning original order');
+      logger.warn('Could not parse AI response, returning original order');
       return projects;
     }
 
