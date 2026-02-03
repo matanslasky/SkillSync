@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { X, Wand2, Loader2, Sparkles, CheckCircle } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { isAIConfigured } from '../services/aiService';
-
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '', {
-  baseUrl: 'https://generativelanguage.googleapis.com/v1'
-});
 
 const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
   const [step, setStep] = useState(1); // 1: Input, 2: Generated, 3: Review
@@ -20,10 +15,9 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
 
     setLoading(true);
     try {
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash-001',
-        generationConfig: { temperature: 0.7 }
-      });
+      // Use fetch directly with v1 API endpoint (not v1beta)
+      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
       const prompt = `You are a project planning assistant. Convert this natural language description into a structured project plan.
 
@@ -55,9 +49,35 @@ Return ONLY valid JSON in this exact format:
   "successMetrics": ["metric1", "metric2", "metric3"]
 }`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates[0]?.content?.parts[0]?.text;
+      
+      if (!text) {
+        throw new Error('No response from AI');
+      }
 
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
