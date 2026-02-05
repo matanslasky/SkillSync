@@ -1,8 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { reportError } from './errorReporting';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+// Ollama configuration
+const OLLAMA_BASE_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
 
 // Cache for AI responses (24 hour TTL)
 const responseCache = new Map();
@@ -14,21 +14,34 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
  */
 
 /**
- * Get AI model instance with configuration
- * @param {Object} config - Model configuration
- * @returns {Object} Configured model instance
+ * Call Ollama API
+ * @param {string} prompt - The prompt to send
+ * @param {Object} config - Configuration options
+ * @returns {Promise<string>} Response text
  */
-const getModel = (config = {}) => {
-  return genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    generationConfig: {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 1024,
-      ...config,
-    },
+const callOllama = async (prompt, config = {}) => {
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      prompt,
+      stream: false,
+      options: {
+        temperature: config.temperature || 0.7,
+        top_k: config.topK || 40,
+        top_p: config.topP || 0.95,
+        num_predict: config.maxOutputTokens || 1024,
+      },
+    }),
   });
+  
+  if (!response.ok) {
+    throw new Error(`Ollama API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data.response;
 };
 
 /**
@@ -69,8 +82,6 @@ export const calculateTeamMatchScore = async (user, project) => {
     const cacheKey = getCacheKey('team-match', { userId: user.id, projectId: project.id });
     
     return await getCachedOrGenerate(cacheKey, async () => {
-      const model = getModel({ temperature: 0.5 }); // Lower temp for consistent scoring
-      
       const prompt = `You are an AI assistant specializing in team matching for collaborative projects.
 
 User Profile:
@@ -101,9 +112,7 @@ Return ONLY valid JSON in this exact format:
   "confidence": number
 }`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await callOllama(prompt, { temperature: 0.5 });
       
       // Parse JSON response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -151,8 +160,6 @@ export const suggestTaskAssignment = async (task, teamMembers) => {
     });
     
     return await getCachedOrGenerate(cacheKey, async () => {
-      const model = getModel();
-      
       const prompt = `You are an AI task assignment specialist. Suggest the best team member for this task.
 
 Task Details:
@@ -179,9 +186,7 @@ Analyze and recommend the best person for this task. Return ONLY valid JSON:
   "estimatedCompletionTime": "string"
 }`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await callOllama(prompt, { temperature: 0.7 });
       
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -226,8 +231,6 @@ export const analyzeTeamSentiment = async (messages) => {
     });
     
     return await getCachedOrGenerate(cacheKey, async () => {
-      const model = getModel({ temperature: 0.3 }); // Low temp for consistent analysis
-      
       const recentMessages = messages.slice(0, 20).map(m => 
         `[${m.timestamp}] ${m.senderName}: ${m.content}`
       ).join('\n');
@@ -247,9 +250,7 @@ Analyze the overall team sentiment and dynamics. Return ONLY valid JSON:
   "strengths": ["strength1"]
 }`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await callOllama(prompt, { temperature: 0.3 });
       
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -332,8 +333,6 @@ export const generateProgressReport = async (project) => {
     });
     
     return await getCachedOrGenerate(cacheKey, async () => {
-      const model = getModel({ temperature: 0.6 });
-      
       const completedTasks = project.tasks?.filter(t => t.status === 'completed').length || 0;
       const totalTasks = project.tasks?.length || 0;
       const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -349,9 +348,8 @@ Recent Activity: ${project.lastActivity || 'No recent activity'}
 Write 2-3 sentences summarizing progress, highlighting achievements, and providing motivation.
 Be positive, specific, and actionable. Return only the summary text, no JSON.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text().trim();
+      const text = await callOllama(prompt, { temperature: 0.6 });
+      return text.trim();
     });
   } catch (error) {
     reportError(error, {

@@ -15,9 +15,9 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
 
     setLoading(true);
     try {
-      // Use fetch directly with v1 API endpoint (not v1beta)
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+      // Use Ollama local API
+      const OLLAMA_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434';
+      const MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
 
       const prompt = `You are a project planning assistant. Convert this natural language description into a structured project plan.
 
@@ -49,20 +49,18 @@ Return ONLY valid JSON in this exact format:
   "successMetrics": ["metric1", "metric2", "metric3"]
 }`;
 
-      const response = await fetch(url, {
+      const response = await fetch(`${OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
+          model: MODEL,
+          prompt,
+          stream: false,
+          options: {
             temperature: 0.7,
-            maxOutputTokens: 2048,
+            num_predict: 2048,
           }
         })
       });
@@ -73,10 +71,10 @@ Return ONLY valid JSON in this exact format:
       }
 
       const data = await response.json();
-      const text = data.candidates[0]?.content?.parts[0]?.text;
+      const text = data.response;
       
       if (!text) {
-        throw new Error('No response from AI');
+        throw new Error('No response from Ollama');
       }
 
       // Extract JSON from response
@@ -93,10 +91,10 @@ Return ONLY valid JSON in this exact format:
       
       // More detailed error message
       let errorMessage = 'Failed to generate project. ';
-      if (error.message?.includes('API key')) {
-        errorMessage += 'Invalid API key. Please check your Gemini API key in .env file.';
-      } else if (error.message?.includes('quota')) {
-        errorMessage += 'API quota exceeded. Try again later.';
+      if (error.message?.includes('Ollama')) {
+        errorMessage += 'Cannot connect to Ollama. Make sure Ollama is running (ollama serve).';
+      } else if (error.message?.includes('ECONNREFUSED')) {
+        errorMessage += 'Ollama is not running. Start it with: ollama serve';
       } else if (error.message?.includes('parse')) {
         errorMessage += 'AI response format error. Try rephrasing your description.';
       } else {
