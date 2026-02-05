@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Wand2, Loader2, Sparkles, CheckCircle } from 'lucide-react';
-import { isAIConfigured } from '../services/aiService';
+import { isAIAvailable } from '../services/aiService';
 
 const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
   const [step, setStep] = useState(1); // 1: Input, 2: Generated, 3: Review
@@ -8,7 +8,7 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
   const [loading, setLoading] = useState(false);
   const [generatedProject, setGeneratedProject] = useState(null);
 
-  const aiConfigured = isAIConfigured();
+  const aiConfigured = isAIAvailable();
 
   const generateProjectFromText = async () => {
     if (!naturalInput.trim()) return;
@@ -19,51 +19,43 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
       const OLLAMA_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434';
       const MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
 
-      const prompt = `You are a project planning assistant. Convert this natural language description into a structured project plan.
+      // Simplified prompt for faster generation
+      const prompt = `Project: "${naturalInput}"
 
-User's Description:
-"${naturalInput}"
-
-Generate a complete project structure with:
-1. Clear, professional project title
-2. Detailed description (2-3 sentences)
-3. Appropriate category (Social Impact, EdTech, E-commerce, FinTech, or HealthTech)
-4. Required skills (3-5 specific technical skills)
-5. Suggested team roles (3-5 roles like Frontend Developer, Designer, etc.)
-6. 5-7 initial tasks/milestones
-7. Realistic timeline (in weeks)
-8. Success metrics
-
-Return ONLY valid JSON in this exact format:
+Return JSON only:
 {
-  "title": "string",
-  "description": "string",
-  "category": "string",
-  "requiredSkills": ["skill1", "skill2", "skill3"],
-  "teamRoles": ["role1", "role2", "role3"],
-  "tasks": [
-    {"title": "task1", "description": "details", "priority": "high|medium|low"},
-    {"title": "task2", "description": "details", "priority": "high|medium|low"}
-  ],
-  "timelineWeeks": number,
-  "successMetrics": ["metric1", "metric2", "metric3"]
+  "title": "project name",
+  "description": "brief description",
+  "category": "EdTech",
+  "requiredSkills": ["skill1", "skill2"],
+  "teamRoles": ["role1", "role2"],
+  "tasks": [{"title": "task", "description": "...", "priority": "high"}],
+  "timelineWeeks": 8,
+  "successMetrics": ["metric1"]
 }`;
+
+      // Add timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 40000);
 
       const response = await fetch(`${OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: MODEL,
           prompt,
           stream: false,
           options: {
-            temperature: 0.7,
-            num_predict: 2048,
+            temperature: 0.5,
+            num_predict: 600,
           }
         })
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -91,7 +83,9 @@ Return ONLY valid JSON in this exact format:
       
       // More detailed error message
       let errorMessage = 'Failed to generate project. ';
-      if (error.message?.includes('Ollama')) {
+      if (error.name === 'AbortError') {
+        errorMessage += 'Request timed out (40s). The model might be too slow. Try a simpler description or use manual project creation.';
+      } else if (error.message?.includes('Ollama')) {
         errorMessage += 'Cannot connect to Ollama. Make sure Ollama is running (ollama serve).';
       } else if (error.message?.includes('ECONNREFUSED')) {
         errorMessage += 'Ollama is not running. Start it with: ollama serve';
@@ -131,7 +125,10 @@ Return ONLY valid JSON in this exact format:
             <Wand2 className="mx-auto text-gray-600 mb-4" size={48} />
             <h3 className="text-xl font-bold text-white mb-2">AI Features Unavailable</h3>
             <p className="text-gray-400 mb-4">
-              Configure your Gemini API key to use AI-powered project creation.
+              Ollama is not running. Start it with: <code className="bg-dark-lighter px-2 py-1 rounded text-neon-green font-mono text-sm">ollama serve</code>
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Need to install? Visit: <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="text-neon-cyan hover:underline">ollama.com</a>
             </p>
             <button
               onClick={handleClose}
@@ -341,7 +338,7 @@ Return ONLY valid JSON in this exact format:
         <div className="p-6 border-t border-gray-800 bg-dark-lighter flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <Sparkles size={14} className="text-neon-purple" />
-            <span>Powered by Gemini AI</span>
+            <span>Powered by Ollama AI</span>
           </div>
 
           <div className="flex gap-3">
