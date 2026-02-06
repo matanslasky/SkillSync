@@ -19,43 +19,55 @@ const AIProjectWizard = ({ isOpen, onClose, onCreate }) => {
       const OLLAMA_URL = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434';
       const MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2';
 
-      // Simplified prompt for faster generation
-      const prompt = `Project: "${naturalInput}"
+      const prompt = `You are a project planning assistant. Convert this natural language description into a structured project plan.
 
-Return JSON only:
+User's Description:
+"${naturalInput}"
+
+Generate a complete project structure with:
+1. Clear, professional project title
+2. Detailed description (2-3 sentences)
+3. Appropriate category (Social Impact, EdTech, E-commerce, FinTech, or HealthTech)
+4. Required skills (3-5 specific technical skills)
+5. Suggested team roles (3-5 roles like Frontend Developer, Designer, etc.)
+6. 5-7 initial tasks/milestones
+7. Realistic timeline (in weeks)
+8. Success metrics
+
+Return ONLY valid JSON in this exact format:
 {
-  "title": "project name",
-  "description": "brief description",
-  "category": "EdTech",
-  "requiredSkills": ["skill1", "skill2"],
-  "teamRoles": ["role1", "role2"],
-  "tasks": [{"title": "task", "description": "...", "priority": "high"}],
-  "timelineWeeks": 8,
-  "successMetrics": ["metric1"]
+  "title": "string",
+  "description": "string",
+  "category": "string",
+  "requiredSkills": ["skill1", "skill2", "skill3"],
+  "teamRoles": ["role1", "role2", "role3"],
+  "tasks": [
+    {"title": "task1", "description": "details", "priority": "high|medium|low"},
+    {"title": "task2", "description": "details", "priority": "high|medium|low"}
+  ],
+  "timelineWeeks": number,
+  "successMetrics": ["metric1", "metric2", "metric3"]
 }`;
-
-      // Add timeout handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 40000);
 
       const response = await fetch(`${OLLAMA_URL}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        signal: controller.signal,
         body: JSON.stringify({
           model: MODEL,
           prompt,
           stream: false,
           options: {
-            temperature: 0.5,
-            num_predict: 600,
+            temperature: 0.7,
+            num_predict: 1024,
+            num_ctx: 4096,
+            top_k: 20,
+            top_p: 0.9,
+            repeat_penalty: 1.1,
           }
         })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -83,9 +95,7 @@ Return JSON only:
       
       // More detailed error message
       let errorMessage = 'Failed to generate project. ';
-      if (error.name === 'AbortError') {
-        errorMessage += 'Request timed out (40s). The model might be too slow. Try a simpler description or use manual project creation.';
-      } else if (error.message?.includes('Ollama')) {
+      if (error.message?.includes('Ollama')) {
         errorMessage += 'Cannot connect to Ollama. Make sure Ollama is running (ollama serve).';
       } else if (error.message?.includes('ECONNREFUSED')) {
         errorMessage += 'Ollama is not running. Start it with: ollama serve';

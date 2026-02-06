@@ -29,9 +29,11 @@ const callOllama = async (prompt, config = {}) => {
       stream: false,
       options: {
         temperature: config.temperature || 0.7,
-        top_k: config.topK || 40,
-        top_p: config.topP || 0.95,
-        num_predict: config.maxOutputTokens || 1024,
+        num_ctx: 4096,
+        top_k: config.topK || 20,
+        top_p: config.topP || 0.9,
+        num_predict: config.maxOutputTokens || 800,
+        repeat_penalty: 1.1,
       },
     }),
   });
@@ -370,11 +372,25 @@ export const clearAICache = () => {
 
 /**
  * Check if AI service is configured correctly
- * @returns {boolean} True if API key is configured
+ * @returns {Promise<boolean>} True if Ollama is running
  */
-export const isAIConfigured = () => {
-  return !!import.meta.env.VITE_GEMINI_API_KEY && 
-         import.meta.env.VITE_GEMINI_API_KEY !== 'your_gemini_api_key_here';
+export const isAIConfigured = async () => {
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      signal: AbortSignal.timeout(2000)
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Synchronous check if Ollama should be available
+ * @returns {boolean} Always true for Ollama (runs locally)
+ */
+export const isAIAvailable = () => {
+  return true; // Ollama runs locally, always "available"
 };
 
 export default {
@@ -385,4 +401,5 @@ export default {
   generateProgressReport,
   clearAICache,
   isAIConfigured,
+  isAIAvailable,
 };
